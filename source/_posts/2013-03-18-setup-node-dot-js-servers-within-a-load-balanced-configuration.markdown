@@ -3,6 +3,8 @@ layout: post
 title: "Week 2: Setup node.js servers within a load-balanced configuration"
 date: 2013-03-18 13:21
 comments: true
+keywords: nodejs,haproxy,vagrant,chef,requirejs,backbone,express,startup
+description: A step-by-step guide to setup a Node.js project, provision it with Chef, and deploy it within a load-balanced configuration using HAProxy.
 ---
 
 With an excellent [foundation][1] in place to automate provisioning of secure
@@ -75,11 +77,11 @@ $ npm install
 
   With Express installed, I created a *server.js* file at the root of the
   project directory and implemented a basic application with a simple logging
-  and configuration strategy. Specifically, I define configuration through
-  environment variables (with suitable defaults) that will be later set with an
+  and configuration strategy. Specifically, I defined configuration through
+  environment variables (with suitable defaults) that will later be set with an
   [Upstart][11] script. I leveraged the [log.js][12] module to write messages
   using the log levels specified by syslog that will later be consolidated with
-  a [rsyslog][13] server.
+  an [rsyslog][13] server.
 
 {% codeblock server.js lang:javascript %}
 'use strict';
@@ -124,7 +126,6 @@ app.listen(app.get('port'));
   references depending on the mode.
 
 {% codeblock server.js lang:javascript %}
-
 // configures underscore view engine
 // TODO: set caching for production
 app.engine('html', require('consolidate').underscore);
@@ -160,7 +161,6 @@ app.configure('production', function () {
     app.use('/public', express.staticCache());
     app.use('/public', express.static(__dirname + '/public', { maxAge: oneYear }));
 });
-
 {% endcodeblock %}
 
 {% codeblock templates/index.html lang:html %}
@@ -201,7 +201,7 @@ module.exports = function (options) {
     app.use(app.router);
 
     app.get('/hello', function (req, res) {
-        req.log.debug('serving /hello api call');
+        req.log.debug('serving /api/hello request');
         res.send('Hello Shawn');
     });
 
@@ -304,11 +304,11 @@ define(['jquery', 'backbone', 'underscore'], function ($, Backbone, _) {
 
 - **Setup Grunt.js build system.** To test changes during development, I setup
   an automated watch and reload workflow using [Grunt][16]. When files change
-  in the *app/* directory, I reload the browser window with the
+  in the *app/* directory, I automatically reload the browser window with the
   [LiveReload][17] Chrome extension. When javascript files change in the */* or
   *lib/* directories, I restart the Node.js server using Upstart. Additionally,
   I also lint both css and javascript files when changes occur. To kickoff this
-  workflow, I simply run *grunt* in the root directory.
+  workflow, I run *grunt* in the root directory.
 
   I also used Grunt to optimize static assets. The *grunt-contrib-requirejs*
   plugin uses require.js's [optimizer][18] to concatnate and minify javascript.
@@ -322,7 +322,7 @@ $ grunt optimize
 {% endcodeblock %}
 
   Check out this [gist][19] for the *Gruntfile.js* that supports this setup.
-  With the build system complete, the first exit criteria was complete.
+  With the build system complete, the first exit criteria was met.
 
 Implement Chef Application Recipe
 ---------------------------------
@@ -334,7 +334,7 @@ step-by-step guide to create the recipe:
 
 - **Provision Node.js and npm packages.** I leveraged the [nodejs][20] cookbook
   to install Node.js and npm by source defining the default versions in the
-  *default.rb* attribute file. Additionally, I defined npm packages to be
+  *default.rb* attributes file. Additionally, I defined npm packages to be
   installed globally on the server (Grunt, Bower) using the LWRP provided
   by the [npm][21] cookbook.
 
@@ -369,7 +369,7 @@ end
 - **Provision Upstart script.** Since I am using Ubuntu, I implemented an
   Upstart script to manage the Node.js application as a service. As I mentioned
   earlier, I configure the application using environment variables defined in
-  the Upstart script injected in using a Chef template. The template also
+  the Upstart script injected in by a Chef template. The template also
   checks whether the application is being provisioned in production mode, and
   if so, includes statements to start the service on startup and run under
   an application-specific user account.
@@ -409,7 +409,8 @@ end
   the deployment and log directories, copies over a ssh deploy key, clones
   the *marinara* git repository, install dependencies, and optimizes assets. A
   number of default attributes drive the deployment -- the most important
-  of which is *reference* attribute defining the git tag or branch to deploy.
+  of which is the *reference* attribute defining the git tag or branch to
+  deploy.
 
 {% codeblock site-cookbooks/marinara/attributes/default.rb lang:ruby %}
 # defines marinara application deployment configuration
@@ -526,9 +527,152 @@ end
 
 Implement Chef Proxy Recipe
 ---------------------------
+To scale the application servers horizontally with the growth of product
+usage, I implemented a Chef recipe to install and configure HAProxy. This
+recipe leveraged the [haproxy][22] cookbook for most of the heavy lifting.
+However, I had to *reopen* the template resource defined in that cookbook
+to use my configuration template instead. The code snippet below demonstrates
+this. In addition to providing custom configuration that references
+deployed application servers, I implemented a firewall rule to accept traffic
+on port 80 (the default value for the incoming_port attribute). In a future
+week, I intend to tune HAProxy's configuration based on performance testing.
+
+{% codeblock site-cookbooks/marinara/attributes/default.rb lang:ruby %}
+# includes default haproxy cookbook attributes first to override
+include_attribute 'haproxy'
+
+# defines haproxy configuration
+default.haproxy.install_method = 'source'
+default.haproxy.source.version = '1.5-dev17'
+default.haproxy.source.url = 'http://haproxy.1wt.eu/download/1.5/src/devel/haproxy-1.5-dev17.tar.gz'
+default.haproxy.source.checksum = 'b8deab9989e6b9925410b0bc44dd4353'
+
+default.marinara.proxy.server = '127.0.0.1'
+{% endcodeblock %}
+
+{% codeblock site-cookbooks/marinara/recipes/proxy.rb lang:ruby %}
+# provisions haproxy
+include_recipe 'haproxy'
+
+# overrides haproxy cookbook default configuration
+template = resources('template[/etc/haproxy/haproxy.cfg]')
+template.source 'haproxy.cfg.erb'
+template.cookbook 'marinara'
+
+# provisions firewall rule to support incoming http traffic
+include_recipe 'simple_iptables'
+simple_iptables_rule 'proxy' do
+  rule "-p tcp --dport #{node.haproxy.incoming_port}"
+  jump 'ACCEPT'
+end
+{% endcodeblock %}
+
+{% codeblock site-cookbooks/marinara/templates/default/haproxy.cfg.erb lang:ruby %}
+global
+  log 127.0.0.1 local0
+  maxconn 4096
+  user haproxy
+  group haproxy
+
+defaults
+  log global
+  mode http
+  option httplog
+  option dontlognull
+  option redispatch
+  option forwardfor
+  timeout connect 5s
+  timeout client 50s
+  timeout server 50s
+  balance <%= node.haproxy.balance_algorithm %>
+
+frontend http
+  bind 0.0.0.0:<%= node.haproxy.incoming_port %>
+  default_backend application
+
+backend application
+  <% node.marinara.application.servers.each_pair do |name, addr| -%>
+  server <%= name %> <%= addr %>:<%= node.marinara.application.port %> check
+  <% end -%>
+{% endcodeblock %}
 
 Test with Multi-Machine Vagrant Environment
 -------------------------------------------
+To finish off the week, I created a *Vagrantfile* in the *marinara-kitchen*
+repository that creates three virtual machines using VirtualBox. Specifically,
+I created a definition for the HAProxy server and a definition for the
+Node.js application servers running on a private network so they could
+communicate with one another. Here is the configuration below using the new
+Vagrant 1.1 syntax:
+
+{% codeblock Vagrantfile lang:ruby %}
+app_servers = {
+  app0: '10.0.5.3',
+  app1: '10.0.5.4'
+}
+
+Vagrant.configure('2') do |config|
+  config.vm.box = 'precise64-chef11.2'
+  config.vm.box_url = 'https://opscode-vm.s3.amazonaws.com/vagrant/opscode_ubuntu-12.04_chef-11.2.0.box'
+
+  config.vm.provider :virtualbox do |vb|
+    vb.customize ['setextradata', :id, 'VBoxInternal2/SharedFoldersEnableSymlinksCreate/v-root', '1']
+  end
+
+  config.ssh.forward_agent = true
+
+  config.vm.define :proxy do |proxy|
+    proxy.vm.network :private_network, ip: '10.0.5.2'
+    proxy.vm.provision :chef_solo do |chef|
+      chef.cookbooks_path = ['cookbooks', 'site-cookbooks']
+      chef.data_bags_path = 'data_bags'
+      chef.add_recipe 'marinara::default'
+      chef.add_recipe 'marinara::security'
+      chef.add_recipe 'marinara::proxy'
+      chef.json = {
+        marinara: {
+          application: {
+            servers: app_servers
+          }
+        }
+      }
+    end
+  end
+
+  app_servers.each_pair do |name, ip|
+    config.vm.define :"#{name}" do |app|
+      app.vm.network :private_network, ip: ip
+      app.vm.provision :chef_solo do |chef|
+      chef.cookbooks_path = ['cookbooks', 'site-cookbooks']
+      chef.data_bags_path = 'data_bags'
+        chef.add_recipe 'marinara::default'
+        chef.add_recipe 'marinara::security'
+        chef.add_recipe 'marinara::application'
+        chef.json = {
+          marinara: {
+            application: {
+              reference: 'develop'
+            },
+            proxy: {
+              server: '10.0.5.2'
+            }
+          }
+        }
+      end
+    end
+  end
+end
+{% endcodeblock %}
+
+  With the Vagrantfile implemented, I brought the servers up and
+  executed a quick test with curl against my endpoints. With a successful
+  response, the fourth criteria had been met and the week's task complete.
+
+{% codeblock %}
+$ vagrant up
+$ curl http://10.0.5.2/
+$ curl http://10.0.5.2/api/hello
+{% endcodeblock %}
 
 [1]: http://shawn.dahlen.me/blog/2013/03/06/automate-provisioning-of-secure-servers/
 [2]: http://nodejs.org/
@@ -539,7 +683,7 @@ Test with Multi-Machine Vagrant Environment
 [7]: http://requirejs.org/
 [8]: http://documentcloud.github.com/backbone/
 [9]: http://expressjs.com/
-[11]: https://npmjs.org/
+[10]: https://npmjs.org/
 [11]: http://upstart.ubuntu.com/cookbook/
 [12]: https://github.com/visionmedia/log.js/
 [13]: http://www.rsyslog.com/
@@ -551,3 +695,4 @@ Test with Multi-Machine Vagrant Environment
 [19]: https://gist.github.com/smdahlen/5190695
 [20]: https://github.com/mdxp/nodejs-cookbook
 [21]: https://github.com/balbeko/chef-npm/
+[22]: https://github.com/opscode-cookbooks/haproxy

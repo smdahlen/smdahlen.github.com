@@ -3,7 +3,8 @@ layout: post
 title: "Week 1: Automate provisioning of secure servers"
 date: 2013-03-06 10:43
 comments: true
-categories:
+keywords: chef,digital ocean,security,knife solo,startup,ruby
+desscription: A step-by-step guide to provision secure servers using Chef within the Digital Ocean cloud hosting service.
 ---
 
 With the [startup plan][1] in place, I spent the first week focusing on
