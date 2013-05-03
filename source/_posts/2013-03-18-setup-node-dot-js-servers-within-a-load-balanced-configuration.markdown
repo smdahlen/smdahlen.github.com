@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Week 2: Setup node.js servers within a load-balanced configuration"
+title: "Setup node.js servers within a load-balanced configuration"
 date: 2013-03-18 13:21
 comments: true
 keywords: nodejs,haproxy,vagrant,chef,requirejs,backbone,express,startup

@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Week 1: Automate provisioning of secure servers"
+title: "Automate provisioning of secure servers"
 date: 2013-03-06 10:43
 comments: true
 keywords: chef,digital ocean,security,knife solo,startup,ruby

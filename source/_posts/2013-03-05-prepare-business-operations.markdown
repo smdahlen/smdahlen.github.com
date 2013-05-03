@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Week 0: Prepare business operations"
+title: "Prepare business operations"
 date: 2013-03-05 13:41
 comments: true
 categories: startup
