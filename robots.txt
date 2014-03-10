@@ -1,0 +1,4 @@
+User-agent: *
+Disallow: 
+
+Sitemap: http://smdahlen.github.com/sitemap.xml 

@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: startup | Shawn Dahlen]]></title>
+  <link href="http://smdahlen.github.com/blog/categories/startup/atom.xml" rel="self"/>
+  <link href="http://smdahlen.github.com/"/>
+  <updated>2014-03-10T18:18:57-04:00</updated>
+  <id>http://smdahlen.github.com/</id>
+  <author>
+    <name><![CDATA[Shawn Dahlen]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Prepare business operations]]></title>
+    <link href="http://smdahlen.github.com/blog/2013/03/05/prepare-business-operations/"/>
+    <updated>2013-03-05T13:41:00-05:00</updated>
+    <id>http://smdahlen.github.com/blog/2013/03/05/prepare-business-operations</id>
+    <content type="html"><![CDATA[<p>With my <a href="http://shawn.dahlen.me/blog/2013/02/25/shifting-my-attention/">attention</a>
+now focused on the startup, I spent this week bootstrapping the business. The
+objective was to establish a project plan achievable within thirty weeks while
+preparing technical and financial operations. Before I dive into the
+particulars of the schedule, let me provide a look into what I will be working on.</p>
+
+<!-- more -->
+
+
+<h2>The Product</h2>
+
+<p>Before I made the leap, I had several ideas worth pursuing. Most were mid to large
+in size. I would have had to create a working prototype over the thirty week
+time period and raise venture capital to take it to the next step. Instead, I
+decided to focus on a niche and implement a full solution within the same timeframe
+with the mid-term objective of generating semi-passive income that could seed
+bigger ideas.</p>
+
+<p>The niche I will be targeting is a task management app that provides first-class
+support for the <a href="http://www.pomodorotechnique.com/">Pomodoro Technique</a>. Why you ask? First and foremost, it scratches my own itch. As Paul Graham penned in
+<a href="http://www.paulgraham.com/startupideas.html">How To Get Startup Ideas</a>, the best
+ideas are ones in which the founders themselves want and can build. While
+there exists many first-class task management solutions, none provide rich support
+for arguably one of the most <a href="http://lifehacker.com/5890129/five-best-productivity-methods">popular productivity methods</a>. I will initially launch with a web-based
+interface and follow with iOS and Android versions pending traction of the
+product. More information will follow regarding the product, its features, and
+user experience in several weeks.</p>
+
+<h2>The Plan</h2>
+
+<p>The plan is simple. I have divided the thirty weeks into five sprints each
+with a specific work package (objective). The work package is further decomposed
+into six tasks that are approximately one week of effort each. This approach
+afforded me a clear weekly focus that I could subsequently share with you.</p>
+
+<p>I opted to tackle the product architecture first versus the typical approach of
+defining product requirements. I felt that more risk existed with the product
+architecture since I had not operated systems on the Internet before while the
+base requirements are already well-defined within the Pomodoro Technique
+<a href="http://www.pomodorotechnique.com/download/pdf/ThePomodoroTechnique_v1-3.pdf">book</a>.</p>
+
+<p>With the current plan, I intend to launch the product in early October (accounting
+for some vacation time with my family).</p>
+
+<p><strong>Sprints</strong></p>
+
+<ol>
+<li>Define and prototype the product architecture
+
+<ul>
+<li>Week 1: Automate provisioning of secure servers</li>
+<li>Week 2: Setup Node.js servers within a load-balanced configuration</li>
+<li>Week 3: Setup a MongoDb database cluster</li>
+<li>Week 4: Setup an automated functional testing framework</li>
+<li>Week 5: Setup a performance testing framework</li>
+<li>Week 6: Setup a monitoring and backup strategy</li>
+</ul>
+</li>
+<li>Define product user experience
+
+<ul>
+<li>Week 7: Draft personas, goals, and feature requirements</li>
+<li>Week 8: Draft paper storyboards</li>
+<li>Week 9: Establish a visual design</li>
+<li>Week 10: Draft design compositions for time and inventory features</li>
+<li>Week 11: Draft design compositions for reporting and gameplay features</li>
+<li>Week 12: Draft design compositions for registration and payment features</li>
+</ul>
+</li>
+<li>Implement registration, time, and inventory features</li>
+<li>Implement reporting, gameplay, and payment features</li>
+<li>Conduct testing and draft marketing plan</li>
+</ol>
+
+
+<h2>Other Activities</h2>
+
+<p>Beyond defining the schedule and the associated research required to scope it, I
+tackled a few other activities in preparation for week one kickoff:</p>
+
+<ul>
+<li>I incorporated my business, tenatively named <em>Whimsical Bits, Ltd.</em>, through
+<a href="http://www.rocketlawyer.com/">Rocket Lawyer</a> and drafted my LLC Operating
+Agreement.</li>
+<li>I implemented a <a href="https://github.com/smdahlen/mac-bootstrap">script</a> to bootstrap
+my mac for software development that includes setup of homebrew, vim, irssi,
+rbenv, and a few ruby gems (which I will discuss next week). Additionally, I
+refined my personal <a href="https://github.com/smdahlen/dotfiles">dotfiles</a> that
+intend to push to all servers I work on.</li>
+</ul>
+
+]]></content>
+  </entry>
+  
+</feed>

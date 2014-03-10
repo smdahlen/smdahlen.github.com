@@ -1,0 +1,846 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Automate provisioning of secure servers - Shawn Dahlen</title>
+  <meta name="author" content="Shawn Dahlen">
+  
+  <meta name="description" content="A personal blog chronicling the startup of a new software business after the author spent 10 years working for a large corporation.">
+  <meta name="keywords" content="chef,digital ocean,security,knife solo,startup,ruby">
+
+<!--
+  <meta name="author" content="Shawn Dahlen">
+
+  
+  <meta name="description" content="With the startup plan in place, I spent the first week focusing on
+provisioning servers with a cloud provider. Specifically, I intended to
+leverage a &hellip;">
+  <meta name="keywords" content="chef,digital ocean,security,knife solo,startup,ruby">
+-->
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://smdahlen.github.com/blog/2013/03/06/automate-provisioning-of-secure-servers/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="Shawn Dahlen" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-1951656-2']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Shawn Dahlen</a></h1>
+  
+    <h2>Periodic updates on my software startup endeavor</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:smdahlen.github.com" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Automate Provisioning of Secure Servers</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-03-06T10:43:00-05:00" pubdate data-updated="true">Mar 6<span>th</span>, 2013</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>With the <a href="http://shawn.dahlen.me/blog/2013/03/05/prepare-business-operations/">startup plan</a> in place, I spent the first week focusing on
+provisioning servers with a cloud provider. Specifically, I intended to
+leverage a solution such as Puppet or Chef to automate the setup and
+configuration of a server within the <a href="https://www.digitalocean.com">Digital Ocean</a> cloud hosting service
+following a few security best practices. Before starting each week&#8217;s
+objective, I will be clarifying the business value and exit criteria to help
+keep the end in mind.</p>
+
+<!-- more -->
+
+
+<h2>Value and Exit Criteria</h2>
+
+<p>This first task will yield a decrease in operational cost and time to market.
+Instead of manually creating new servers through a set of procedures for each
+environment (development, test, production), the output of this effort will
+provide the scaffolding to rebuild an environment within minutes while
+maintaining quality through solid configuration management practices.</p>
+
+<p>To complete the task, two criteria had to be met:</p>
+
+<ul>
+<li>Create and destroy server instances on the Digital Ocean cloud hosting
+service via the command line</li>
+<li>Implement a Chef <a href="http://docs.opscode.com/essentials_cookbooks.html">cookbook</a> to configure a server with a set of standard
+security practices</li>
+</ul>
+
+
+<h2>Why Digital Ocean and Chef?</h2>
+
+<p>While Amazon AWS is the big name in the cloud hosting space, I opted for
+Digital Ocean for its prices, solid state drives, simplicity, and initimate
+customer support. Given that my storage requirements will be small and that
+subscriber growth should be reasonably predictable, a VPS offering better
+price for performance made sense. There are a few things missing that I hope
+to see soon: 1) an API for DNS mangement and 2) a HA load balancing solution.</p>
+
+<p>I came to the decision to use Chef based on my experiences with Puppet at my
+former company. Specifically, it became a challenge to leverage and baseline
+modules developed by third-parties within our infrastrcture. While both products
+are great (I would recommend both), I felt that Chef and its community were
+pushing the envelope on reuse of infrastructure code with its data-driven
+approach (attributes, data bags) and package management solutions
+(<a href="https://github.com/applicationsonline/librarian">librarian</a> and <a href="http://berkshelf.com">berkshelf</a>). In the next section, I&#8217;ll demonstrate this
+reuse.</p>
+
+<p>In addition to selecting Chef, I also made the decision to use Chef Solo vs
+Chef Server. A large part of the decision had to do with keeping things simple.
+With the open source project, <a href="http://matschaffer.github.com/knife-solo/">knife-solo</a>, I was able to meet my exit
+criteria while still benefiting from 90% of Chef&#8217;s features.</p>
+
+<h2>Provisioning a Secure Server</h2>
+
+<p>Below is the step-by-step guide to provision a secure server within Digital
+Ocean using Chef:</p>
+
+<ul>
+<li><strong>Install ruby gems.</strong> To get started, I installed two gem packages that
+ provide plugins to the Chef <a href="http://docs.opscode.com/knife.html">knife</a> command-line tool. knife-solo
+ supports the provisioning of Chef cookbooks to a single server from a
+ workstation. <a href="https://github.com/rmoriz/knife-digital_ocean">knife-digital_ocean</a> provides a wrapper around Digital
+ Ocean&#8217;s API to create and destroy server instances. I added these gems
+ to my Gemfile in my <a href="https://github.com/smdahlen/mac-bootstrap">mac bootstrap</a> project, but you could install
+ them directly:</li>
+</ul>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ gem install knife-solo knife-digital_ocean</span></code></pre></td></tr></table></div></figure>
+
+
+<p>   <em>Note</em>: I ran into <a href="https://github.com/matschaffer/knife-solo/issues/177">issue 177</a> when using knife-solo. To resolve, I
+   used version 0.3.0.pre2 (instead of 0.2.0).</p>
+
+<ul>
+<li><strong>Create the Chef project repository.</strong> With the gems installed, I created
+ a new Chef repository (also known as a kitchen) that will contain configuration
+ data and code to provision multiple servers comprising the product. The product
+ has a tentative name, Marinara, so I will be using that throughout the rest of the
+ article. I initialized the repository to use librarian so I could easily
+ reference and use third-party cookbooks.</li>
+</ul>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ knife solo init --librarian marinara-kitchen</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li><strong>Initialize git repository and setup development branch.</strong> It is a good practice
+ to use version control with your Chef repository. With the decision to use Chef
+ Solo, I am unable to use the <a href="http://docs.opscode.com/essentials_environments.html">environments</a> capability of Chef Server which
+ allows an operator to pin cookbook versions to a specific environment. However,
+ using a git branching strategy like the one discussed at <a href="http://nvie.com/posts/a-successful-git-branching-model/">nvie.com</a>,
+ environments can be represented as long-running git branches with varying
+ cookbook versions defined in the Cheffile (more on that in a bit). An operator
+ can simply checkout a git reference (tag or branch) to build an environment.</li>
+</ul>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ cd marinara-kitchen
+</span><span class='line'>$ git init
+</span><span class='line'>$ git add .
+</span><span class='line'>$ git commit -m 'initial commit'
+</span><span class='line'>$ git checkout -b develop</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li><strong>Setup knife configuration for Digital Ocean.</strong> With the Chef repository created
+ and under version control, I provided API credentials to communicate with the
+ Digital Ocean service in my <em>knife.rb</em> file located at <em>marinara-kitchen/.chef/</em>.
+ These credentials may be found within the <em>My Settings > API Access</em> section of
+ the Digital Ocean dashboard.</li>
+</ul>
+
+
+<figure class='code'><figcaption><span>knife.rb  </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">knife</span><span class="o">[</span><span class="ss">:digital_ocean_client_id</span><span class="o">]</span> <span class="o">=</span> <span class="s1">&#39;xxxxxxxxxxxxxxxxxxxxx&#39;</span>
+</span><span class='line'><span class="n">knife</span><span class="o">[</span><span class="ss">:digital_ocean_api_key</span><span class="o">]</span>   <span class="o">=</span> <span class="s1">&#39;yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li><strong>Upload your ssh public key on Digital Ocean dashboard.</strong> To create servers
+ that do not require a root password, I uploaded my workstation&#8217;s ssh public key
+ within the <em>SSH Keys</em> section of the Digital Ocean dashboard. Once uploaded,
+ I ran the following command (within the repository directory) to retrieve the ID
+ of the ssh key to be used in the next step:</li>
+</ul>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ knife digital_ocean sshkey list</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li><strong>Create a new server and create a DNS A record.</strong> With the knife configuration
+ in place and the ssh key ID at hand, I was ready to create a new server (known
+ as a droplet) on Digital Ocean via the command line. The command below creates
+ a new Ubuntu 12.10 server with 512MB of RAM, 1 CPU, and a 20 GB SSD drive within
+ the New York region using my public ssh key for access. Upon success, the
+ command yields an IP address that I used to create a A record for
+ <em>mycompany.com</em> in the Digital Ocean dashboard. Finally, I could shell into the
+ new server.</li>
+</ul>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ knife digital_ocean droplet create --server-name ops --image 25489 \
+</span><span class='line'>    --size 66 --location 1 --ssh-keys 4444
+</span><span class='line'>$ ssh root@mycompany.com</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li><strong>Create an application cookbook.</strong> With the first exit criteria met, I created
+a new application cookbook that would define recipes configuring the product&#8217;s
+servers. By default, librarian manages third-party cookbooks in the <em>cookbooks</em>
+directory so I created the <em>marinara</em> cookbook within the <em>site-cookbooks</em>
+directory.</li>
+</ul>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ knife cookbook create -o ./site-cookbooks marinara</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li><strong>Install base packages.</strong> I use vim, git, and tmux on a regular basis and wanted
+these packages installed on all servers. I defined a default attribute within the
+cookbook referencing an array of packages to install. Within the default recipe (
+all configuration will be placed here to simplify the article), I loop over this
+array (that may be redefined on a server by server basis) to install the packages.</li>
+</ul>
+
+
+<figure class='code'><figcaption><span>site-cookbooks/marinara/attributes/default.rb  </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># defines base packages</span>
+</span><span class='line'><span class="n">default</span><span class="o">.</span><span class="n">packages</span> <span class="o">=</span> <span class="sx">%w(vim git tmux)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>site-cookbooks/marinara/recipes/default.rb  </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># provisions base packages for a node</span>
+</span><span class='line'><span class="n">node</span><span class="o">.</span><span class="n">packages</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">pkg</span><span class="o">|</span>
+</span><span class='line'>  <span class="n">package</span> <span class="n">pkg</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li><p><strong>Add administrator accounts and their associated dotfiles.</strong> System
+administration should not be conducted using the root account. Each administrator
+should use their own account and password invoking all commands with sudo for
+audit purposes. To add administrator accounts, I leveraged the <a href="https://github.com/fnichol/chef-user">chef-user</a>
+cookbook. This cookbook looks at the node attribute, <em>users</em>, which
+subsequently references users within the <em>users</em> data bag, to create new
+accounts. For administrators with dotfiles managed with <a href="https://github.com/technicalpickles/homesick">homesick</a>, they
+would be deployed using the <a href="https://github.com/fnichol/chef-homesick">chef-homesick</a> cookbook. These third-party
+cookbooks are referenced in two places: 1) the <em>Cheffile</em> at the root of the
+repository, and 2) the <em>metadata.rb</em> file at the root of the application cookbook.</p>
+
+<p>For each administrator account, the ssh public key is provisioned, the
+hashed password is set (using mkpasswd -m sha-512), and it is added to the sudo
+admin group.</p></li>
+</ul>
+
+
+<figure class='code'><figcaption><span>./data_bags/users/shawn.json  </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="s2">&quot;id&quot;</span><span class="o">:</span> <span class="s2">&quot;shawn&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="s2">&quot;password&quot;</span><span class="o">:</span> <span class="s2">&quot;xxx&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="s2">&quot;groups&quot;</span><span class="o">:</span> <span class="p">[</span>
+</span><span class='line'>        <span class="s2">&quot;sudo&quot;</span>
+</span><span class='line'>    <span class="p">],</span>
+</span><span class='line'>    <span class="s2">&quot;ssh_keys&quot;</span><span class="o">:</span> <span class="p">[</span>
+</span><span class='line'>        <span class="s2">&quot;public key here&quot;</span>
+</span><span class='line'>    <span class="p">],</span>
+</span><span class='line'>    <span class="s2">&quot;homesick_castles&quot;</span><span class="o">:</span> <span class="p">[</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="s2">&quot;name&quot;</span><span class="o">:</span> <span class="s2">&quot;dotfiles&quot;</span><span class="p">,</span>
+</span><span class='line'>            <span class="s2">&quot;source&quot;</span><span class="o">:</span> <span class="s2">&quot;git://github.com/smdahlen/dotfiles.git&quot;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">]</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>./site-cookbooks/marinara/metadata.rb  </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">depends</span> <span class="s1">&#39;user&#39;</span><span class="p">,</span> <span class="s1">&#39;~&gt; 0.3.0&#39;</span>
+</span><span class='line'><span class="n">depends</span> <span class="s1">&#39;homesick&#39;</span><span class="p">,</span> <span class="s1">&#39;~&gt; 0.3.2&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>./site-cookbooks/marinara/attributes/default.rb  </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># defines user accounts and overriden user cookbook attributes</span>
+</span><span class='line'><span class="n">default</span><span class="o">.</span><span class="n">users</span> <span class="o">=</span> <span class="o">[</span><span class="s1">&#39;shawn&#39;</span><span class="o">]</span>
+</span><span class='line'><span class="n">default</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">ssh_keygen</span> <span class="o">=</span> <span class="kp">false</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>./site-cookbooks/marinara/recipes/default.rb  </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># provisions user accounts and their dotfiles defined in a data bag</span>
+</span><span class='line'><span class="n">include_recipe</span> <span class="s1">&#39;user::data_bag&#39;</span>
+</span><span class='line'><span class="n">include_recipe</span> <span class="s1">&#39;homesick::data_bag&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li><strong>Restrict ssh access.</strong> With the adminstrator accounts provisioned, it was time
+to tighten access to ssh by not permitting root login and disabling password
+authentication. This was accomplished by leveraging the <a href="https://github.com/opscode-cookbooks/openssh">openssh</a> cookbook
+and defining the appropriate default attributes.</li>
+</ul>
+
+
+<figure class='code'><figcaption><span>./site-cookbooks/marinara/metadata.rb  </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">depends</span> <span class="s1">&#39;openssh&#39;</span><span class="p">,</span> <span class="s1">&#39;~&gt; 1.1.4&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>./site-cookbooks/marinara/attributes/default.rb  </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># defines sshd configuration that differ from /etc/ssh/sshd_config defaults</span>
+</span><span class='line'><span class="n">default</span><span class="o">.</span><span class="n">openssh</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">permit_root_login</span> <span class="o">=</span> <span class="s1">&#39;no&#39;</span>
+</span><span class='line'><span class="n">default</span><span class="o">.</span><span class="n">openssh</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">password_authentication</span> <span class="o">=</span> <span class="s1">&#39;no&#39;</span>
+</span><span class='line'><span class="n">default</span><span class="o">.</span><span class="n">openssh</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">allow_groups</span> <span class="o">=</span> <span class="s1">&#39;sudo&#39;</span>
+</span><span class='line'><span class="n">default</span><span class="o">.</span><span class="n">openssh</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">login_grace_time</span> <span class="o">=</span> <span class="s1">&#39;30&#39;</span>
+</span><span class='line'><span class="n">default</span><span class="o">.</span><span class="n">openssh</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">use_p_a_m</span> <span class="o">=</span> <span class="s1">&#39;no&#39;</span>
+</span><span class='line'><span class="n">default</span><span class="o">.</span><span class="n">openssh</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">print_motd</span> <span class="o">=</span> <span class="s1">&#39;no&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>./site-cookbooks/marinara/recipes/default.rb  </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># provisions ssh configured for no password auth and root login</span>
+</span><span class='line'><span class="n">include_recipe</span> <span class="s1">&#39;openssh&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li><strong>Setup notifications for package updates.</strong> Another security best practice is
+ to ensure that security updates are applied in a timely manner. While I could
+ have setup automatic updates, this would inevitably lead to issues in production.
+ It is best to try updates within a test environment first so I opted to receive
+ daily email notifications instead. I setup <em>ssmtp</em> to relay mail through a
+ smarthost (in my case, <a href="http://www.mailgun.com/">Mailgun</a>). My recipe loads smarthost configuration
+ from a data bag and passes it to a template to create the ssmtp.conf file. The
+ package notifications are delivered using the <a href="http://www.debian-administration.org/articles/491">apticron</a> tool.</li>
+</ul>
+
+
+<figure class='code'><figcaption><span>./data_bags/smarthosts/mailgun.json  </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="s2">&quot;id&quot;</span><span class="o">:</span> <span class="s2">&quot;mailgun&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="s2">&quot;host&quot;</span><span class="o">:</span> <span class="s2">&quot;smtp.mailgun.org&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="s2">&quot;port&quot;</span><span class="o">:</span> <span class="s2">&quot;587&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="s2">&quot;username&quot;</span><span class="o">:</span> <span class="s2">&quot;postmaster@mycompany.com&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="s2">&quot;password&quot;</span><span class="o">:</span> <span class="s2">&quot;xxx&quot;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>./site-cookbooks/marinara/attributes/default.rb  </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># defines smtp relay configuration</span>
+</span><span class='line'><span class="n">default</span><span class="o">.</span><span class="n">smtp</span><span class="o">.</span><span class="n">smarthost</span> <span class="o">=</span> <span class="s1">&#39;mailgun&#39;</span>
+</span><span class='line'><span class="n">default</span><span class="o">.</span><span class="n">smtp</span><span class="o">.</span><span class="n">rewrite_domain</span> <span class="o">=</span> <span class="s1">&#39;mycompany.com&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1"># defines apitcron configuration</span>
+</span><span class='line'><span class="n">default</span><span class="o">.</span><span class="n">apticron</span><span class="o">.</span><span class="n">email</span> <span class="o">=</span> <span class="s1">&#39;ops@mycompany.com&#39;</span>
+</span><span class='line'><span class="n">default</span><span class="o">.</span><span class="n">apticron</span><span class="o">.</span><span class="n">diff_only</span> <span class="o">=</span> <span class="kp">false</span>
+</span><span class='line'><span class="n">default</span><span class="o">.</span><span class="n">apticron</span><span class="o">.</span><span class="n">notify_no_updates</span> <span class="o">=</span> <span class="kp">false</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>./site-cookbooks/marinara/recipes/default.rb  </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># provisions ssmtp configured for a smarthost defined in a data bag</span>
+</span><span class='line'><span class="c1"># TODO: use encrypted data bag for smarthost credentials</span>
+</span><span class='line'><span class="n">smarthost</span> <span class="o">=</span> <span class="n">data_bag_item</span><span class="p">(</span><span class="ss">:smarthosts</span><span class="p">,</span> <span class="n">node</span><span class="o">.</span><span class="n">smtp</span><span class="o">.</span><span class="n">smarthost</span><span class="p">)</span>
+</span><span class='line'><span class="k">unless</span> <span class="n">smarthost</span><span class="o">.</span><span class="n">nil?</span>
+</span><span class='line'>  <span class="n">package</span> <span class="s1">&#39;ssmtp&#39;</span>
+</span><span class='line'>  <span class="n">template</span> <span class="s1">&#39;/etc/ssmtp/ssmtp.conf&#39;</span> <span class="k">do</span>
+</span><span class='line'>    <span class="n">source</span> <span class="s1">&#39;ssmtp.conf.erb&#39;</span>
+</span><span class='line'>    <span class="n">owner</span> <span class="s1">&#39;root&#39;</span>
+</span><span class='line'>    <span class="n">group</span> <span class="s1">&#39;root&#39;</span>
+</span><span class='line'>    <span class="n">mode</span> <span class="s1">&#39;0644&#39;</span>
+</span><span class='line'>    <span class="n">variables</span><span class="p">(</span>
+</span><span class='line'>      <span class="ss">smarthost</span><span class="p">:</span> <span class="n">smarthost</span><span class="p">,</span>
+</span><span class='line'>      <span class="ss">domain</span><span class="p">:</span> <span class="n">node</span><span class="o">.</span><span class="n">smtp</span><span class="o">.</span><span class="n">rewrite_domain</span>
+</span><span class='line'>    <span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1"># provisions apticron for package update notifications</span>
+</span><span class='line'><span class="n">package</span> <span class="s1">&#39;apticron&#39;</span>
+</span><span class='line'><span class="n">template</span> <span class="s1">&#39;/etc/apticron/apticron.conf&#39;</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">source</span> <span class="s1">&#39;apticron.conf.erb&#39;</span>
+</span><span class='line'>  <span class="n">owner</span> <span class="s1">&#39;root&#39;</span>
+</span><span class='line'>  <span class="n">group</span> <span class="s1">&#39;root&#39;</span>
+</span><span class='line'>  <span class="n">mode</span> <span class="s1">&#39;0644&#39;</span>
+</span><span class='line'>  <span class="n">variables</span><span class="p">(</span>
+</span><span class='line'>    <span class="ss">email</span><span class="p">:</span> <span class="n">node</span><span class="o">.</span><span class="n">apticron</span><span class="o">.</span><span class="n">email</span><span class="p">,</span>
+</span><span class='line'>    <span class="n">diff_only</span><span class="p">:</span> <span class="n">node</span><span class="o">.</span><span class="n">apticron</span><span class="o">.</span><span class="n">diff_only</span><span class="p">,</span>
+</span><span class='line'>    <span class="n">notify_no_updates</span><span class="p">:</span> <span class="n">node</span><span class="o">.</span><span class="n">apticron</span><span class="o">.</span><span class="n">notify_no_updates</span>
+</span><span class='line'>  <span class="p">)</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li><strong>Setup a restrictive firewall.</strong> The final step to configuring the server was to
+setup a restrictive firewall denying all inbound traffic except ssh. I set the
+INPUT chain policy for iptables to DENY and created a custom chain for my
+server rules. The rules were defined using a Chef <a href="http://docs.opscode.com/lwrp.html">LWRP</a> from the
+<a href="https://github.com/dcrosta/cookbook-simple-iptables">simple-iptables</a> cookbook.</li>
+</ul>
+
+
+<figure class='code'><figcaption><span>./site-cookbooks/marinara/metadata.rb  </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">depends</span> <span class="s1">&#39;simple_iptables&#39;</span><span class="p">,</span> <span class="s1">&#39;~&gt; 0.2.4&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>./site-cookbooks/marinara/recipes/default.rb  </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># provisions iptables firewall rules restricting all ports except ssh</span>
+</span><span class='line'><span class="n">include_recipe</span> <span class="s1">&#39;simple_iptables&#39;</span>
+</span><span class='line'><span class="n">simple_iptables_policy</span> <span class="s1">&#39;INPUT&#39;</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">policy</span> <span class="s1">&#39;DROP&#39;</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'><span class="n">simple_iptables_rule</span> <span class="s1">&#39;system&#39;</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">rule</span> <span class="s1">&#39;-i lo&#39;</span>
+</span><span class='line'>  <span class="n">jump</span> <span class="s1">&#39;ACCEPT&#39;</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'><span class="n">simple_iptables_rule</span> <span class="s1">&#39;system&#39;</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">rule</span> <span class="s1">&#39;-m conntrack --ctstate ESTABLISHED,RELATED&#39;</span>
+</span><span class='line'>  <span class="n">jump</span> <span class="s1">&#39;ACCEPT&#39;</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'><span class="n">simple_iptables_rule</span> <span class="s1">&#39;system&#39;</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">rule</span> <span class="s1">&#39;-p icmp&#39;</span>
+</span><span class='line'>  <span class="n">jump</span> <span class="s1">&#39;ACCEPT&#39;</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'><span class="n">simple_iptables_rule</span> <span class="s1">&#39;system&#39;</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">rule</span> <span class="s1">&#39;-p tcp --dport ssh&#39;</span>
+</span><span class='line'>  <span class="n">jump</span> <span class="s1">&#39;ACCEPT&#39;</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li><strong>Bootstrap the server.</strong> With the basic application cookbook complete, all that
+was left was to tell Chef to apply the default cookbook recipe to the
+<em>mycompany.com</em> server. This was accomplished by defining a run list for the node:</li>
+</ul>
+
+
+<figure class='code'><figcaption><span>./nodes/mycompany.com.json </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="nt">&quot;run_list&quot;</span><span class="p">:</span> <span class="p">[</span>
+</span><span class='line'>        <span class="s2">&quot;recipe[marinara]&quot;</span>
+</span><span class='line'>    <span class="p">]</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>  Finally, I could bootstrap the server with the configuration code defined above
+  with the following command:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ knife solo bootstrap root@mycompany.com</span></code></pre></td></tr></table></div></figure>
+
+
+<p>  With that, the second exit criteria had been met.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Shawn Dahlen</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-03-06T10:43:00-05:00" pubdate data-updated="true">Mar 6<span>th</span>, 2013</time>
+      
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://smdahlen.github.com/blog/2013/03/06/automate-provisioning-of-secure-servers/" data-via="smdahlen" data-counturl="http://smdahlen.github.com/blog/2013/03/06/automate-provisioning-of-secure-servers/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2013/03/05/prepare-business-operations/" title="Previous Post: Prepare business operations">&laquo; Prepare business operations</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2013/03/18/setup-node-dot-js-servers-within-a-load-balanced-configuration/" title="Next Post: Setup node.js servers within a load-balanced configuration">Setup node.js servers within a load-balanced configuration &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+    <h1>Subscribe</h1>
+    <!-- Begin MailChimp Signup Form -->
+    <div id="mc_embed_signup">
+        <form action="http://dahlen.us6.list-manage.com/subscribe/post?u=5acc6f9ea9&amp;id=e6d3f67e16"
+              method="post"
+              id="mc-embedded-subscribe-form"
+              name="mc-embedded-subscribe-form"
+              class="validate"
+              target="_blank" novalidate>
+            <div class="mc-field-group">
+                <label for="mce-EMAIL">Enter your email to receive updates</label>
+                <input type="email" value="" name="EMAIL" class="required email" id="mce-EMAIL">
+            </div>
+            <div id="mce-responses" class="clear">
+                <div class="response" id="mce-error-response" style="display:none"></div>
+                <div class="response" id="mce-success-response" style="display:none"></div>
+            </div>
+            <div class="clear">
+                <input type="submit" value="Subscribe" name="subscribe" id="mc-embedded-subscribe" class="button">
+            </div>
+        </form>
+    </div>
+    <!--End mc_embed_signup-->
+</section>
+<section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/03/10/product-launched/">Product launched</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/05/03/draft-product-scope/">Draft product scope</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/04/12/manage-all-application-environments-with-vagrant/">Manage all application environments with Vagrant</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/03/18/setup-node-dot-js-servers-within-a-load-balanced-configuration/">Setup node.js servers within a load-balanced configuration</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/03/06/automate-provisioning-of-secure-servers/">Automate provisioning of secure servers</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+<section>
+  <h1>Latest Tweets</h1>
+  <ul id="tweets">
+    <li class="loading">Status updating...</li>
+  </ul>
+  <script type="text/javascript">
+    $.domReady(function(){
+      getTwitterFeed("smdahlen", 5, false);
+    });
+  </script>
+  <script src="/javascripts/twitter.js" type="text/javascript"> </script>
+  
+    <a href="http://twitter.com/smdahlen" class="twitter-follow-button" data-show-count="false">Follow @smdahlen</a>
+  
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2014 - Shawn Dahlen -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'shawndahlen';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://smdahlen.github.com/blog/2013/03/06/automate-provisioning-of-secure-servers/';
+        var disqus_url = 'http://smdahlen.github.com/blog/2013/03/06/automate-provisioning-of-secure-servers/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
