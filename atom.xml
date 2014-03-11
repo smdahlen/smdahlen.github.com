@@ -4,7 +4,7 @@
   <title><![CDATA[Shawn Dahlen]]></title>
   <link href="http://smdahlen.github.com/atom.xml" rel="self"/>
   <link href="http://smdahlen.github.com/"/>
-  <updated>2014-03-10T18:18:57-04:00</updated>
+  <updated>2014-03-11T16:43:01-04:00</updated>
   <id>http://smdahlen.github.com/</id>
   <author>
     <name><![CDATA[Shawn Dahlen]]></name>
@@ -14,7 +14,7 @@
 
   
   <entry>
-    <title type="html"><![CDATA[Product launched]]></title>
+    <title type="html"><![CDATA[Product Launched]]></title>
     <link href="http://smdahlen.github.com/blog/2014/03/10/product-launched/"/>
     <updated>2014-03-10T17:22:00-04:00</updated>
     <id>http://smdahlen.github.com/blog/2014/03/10/product-launched</id>
@@ -27,7 +27,7 @@ launched a preview of the product.</p>
 <p>The product, <a href="https://4dashes.com">4dashes</a>, is a productivity tool that turns your todo list
 into a game challenging you build effective work habits. Head over now and
 sign up for a preview account. If you like what you see and have an interest
-in working smarter &#8211; not longer &#8211; please consider contributing to the
+in working smarter &mdash; not longer &mdash; please consider contributing to the
 Indiegogo <a href="http://www.indiegogo.com/projects/4dashes-turn-work-into-serious-fun">campaign</a>. If the campaign is funded, the product will
 officially launch in June along with incomplete features such as leaderboards.</p>
 
@@ -40,7 +40,7 @@ Those will be available at <a href="http://blog.4dashes.com">blog.4dashes.com</a
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[Draft product scope]]></title>
+    <title type="html"><![CDATA[Draft Product Scope]]></title>
     <link href="http://smdahlen.github.com/blog/2013/05/03/draft-product-scope/"/>
     <updated>2013-05-03T15:27:00-04:00</updated>
     <id>http://smdahlen.github.com/blog/2013/05/03/draft-product-scope</id>
@@ -84,10 +84,10 @@ to support effective decision making.</li>
 acceptance criteria supporting the high-level features. Much time was given to
 both creating a set of compelling game elements and ensuring testability of the
 entire scope. The scope is succinct and intended as a foundation for creating
-the user experience design &#8211; little attention was paid to drafting copy for
+the user experience design &mdash; little attention was paid to drafting copy for
 end users either as a manual or marketing material.</p>
 
-<p>Without much further adieu here is the scope for Marinara &#8211; <em>a product that
+<p>Without much further adieu here is the scope for Marinara &mdash; <em>a product that
 helps you tackle your creative project and have fun doing it</em>.</p>
 
 <hr />
@@ -179,7 +179,7 @@ intermediate level or above.</li>
 <li>As a player, I want to view a set of recommended tasks to work on today.
 
 <ul>
-<li>It should display yesterday&#8217;s unfinished tasks.</li>
+<li>It should display yesterday&rsquo;s unfinished tasks.</li>
 <li>It should display tasks due within the next few days.</li>
 <li>It should display tasks related to other recently completed tasks.</li>
 </ul>
@@ -187,7 +187,7 @@ intermediate level or above.</li>
 <li>As a player, I want to add a new task to the today sheet.
 
 <ul>
-<li>It should associate the new task to the player&#8217;s default inventory.</li>
+<li>It should associate the new task to the player&rsquo;s default inventory.</li>
 </ul>
 </li>
 <li>As a player, I want to remove a task from the today sheet.
@@ -235,7 +235,7 @@ the moving average.</li>
 <li>It should update the status of the task to complete.</li>
 </ul>
 </li>
-<li>As a player, I want to view a summary of today&#8217;s progress.
+<li>As a player, I want to view a summary of today&rsquo;s progress.
 
 <ul>
 <li>It should display the number of pomodoros completed.</li>
@@ -284,7 +284,7 @@ activation link.</li>
 <li>It should send an email containing a reset link that expires in 24 hours.</li>
 <li>It should require a complex password after visiting the reset link.</li>
 <li>It should confirm the complex password.</li>
-<li>It should update the player&#8217;s password if it is confirmed.</li>
+<li>It should update the player&rsquo;s password if it is confirmed.</li>
 </ul>
 </li>
 <li>As a player, I want to login with my email address.
@@ -293,25 +293,25 @@ activation link.</li>
 <li>It should require an email address.</li>
 <li>It should require a password.</li>
 <li>It should display a warning if the credentials were incorrect.</li>
-<li>It should redirect to the player&#8217;s home page if correct.</li>
+<li>It should redirect to the player&rsquo;s home page if correct.</li>
 </ul>
 </li>
 <li>As a player, I want to manage my account settings.
 
 <ul>
-<li>It should support updating the player&#8217;s timezone.</li>
-<li>It should support updating the player&#8217;s email address.</li>
-<li>It should support updating the player&#8217;s password.</li>
-<li>It should support updating the player&#8217;s full name.</li>
+<li>It should support updating the player&rsquo;s timezone.</li>
+<li>It should support updating the player&rsquo;s email address.</li>
+<li>It should support updating the player&rsquo;s password.</li>
+<li>It should support updating the player&rsquo;s full name.</li>
 <li>It should support toggling audio notifications.</li>
 </ul>
 </li>
 <li>As a player, I want to login with my Facebook credentials.
 
 <ul>
-<li>It should request permission to access the player&#8217;s public profile.</li>
-<li>It should request permission to access the player&#8217;s email address.</li>
-<li>It should create a new account with the player&#8217;s Facebook token if it
+<li>It should request permission to access the player&rsquo;s public profile.</li>
+<li>It should request permission to access the player&rsquo;s email address.</li>
+<li>It should create a new account with the player&rsquo;s Facebook token if it
 does not exist.</li>
 </ul>
 </li>
@@ -352,7 +352,7 @@ beginner level.</li>
 
 <ul>
 <li>It should require a name.</li>
-<li>It should support setting the inventory as the player&#8217;s default.</li>
+<li>It should support setting the inventory as the player&rsquo;s default.</li>
 </ul>
 </li>
 <li>As a player, I want to remove an inventory sheet.
@@ -584,7 +584,7 @@ estimation accuracy.</li>
 
 <ul>
 <li>It should display a pie chart with the top 5 tags collapsing the
-remaining tags into an &#8216;other&#8217; category.</li>
+remaining tags into an &lsquo;other&rsquo; category.</li>
 <li>It should include the last 14 active days of data.</li>
 </ul>
 </li>
@@ -898,8 +898,8 @@ been accepted.</li>
 <li>As a player, I want to invite colleagues from LinkedIn to support me.
 
 <ul>
-<li>It should support linking to the player&#8217;s LinkedIn account.</li>
-<li>It should display the player&#8217;s LinkedIn connections.</li>
+<li>It should support linking to the player&rsquo;s LinkedIn account.</li>
+<li>It should display the player&rsquo;s LinkedIn connections.</li>
 <li>It should support selecting one or more connections to invite.</li>
 <li>It should create a support request for connections that have an account.</li>
 <li>It should send an email invitation to the service for connections that do
@@ -909,8 +909,8 @@ not have an account.</li>
 <li>As a player, I want to invite family and friends from Facebook to support me.
 
 <ul>
-<li>It should support linking to the player&#8217;s Facebook account.</li>
-<li>It should display the player&#8217;s Facebook friends.</li>
+<li>It should support linking to the player&rsquo;s Facebook account.</li>
+<li>It should display the player&rsquo;s Facebook friends.</li>
 <li>It should support selecting one or more friends to invite.</li>
 <li>It should create a support request for friends that have an account.</li>
 <li>It should send an email invitation to the service for friends that do
@@ -937,7 +937,7 @@ not have an account.</li>
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[Manage all application environments with Vagrant]]></title>
+    <title type="html"><![CDATA[Manage All Application Environments With Vagrant]]></title>
     <link href="http://smdahlen.github.com/blog/2013/04/12/manage-all-application-environments-with-vagrant/"/>
     <updated>2013-04-12T13:53:00-04:00</updated>
     <id>http://smdahlen.github.com/blog/2013/04/12/manage-all-application-environments-with-vagrant</id>
@@ -989,7 +989,7 @@ to spin up a machine provisioned with Puppet or Chef, my knowledge of Vagrant
 was limited. As I dove into the internals of Vagrant to meet my objective, I
 was pleasantly surprised to find an extensible plugin framework. The framework
 supports new configuration, commands, virtual machine providers, and
-action hooks. In fact, most of Vagrant&#8217;s built-in features are implemented
+action hooks. In fact, most of Vagrant&rsquo;s built-in features are implemented
 as plugins.</p>
 
 <p>Operational use cases for creating and managing an environment
@@ -1032,7 +1032,7 @@ it is created, however, my Chef recipes required knowledge of it upfront.</p>
 host names and leverage a Vagrant plugin to synchronize a <code>/etc/hosts</code> file across
 the environment to resolve the names. I created a Vagrant 1.1 compliant
 plugin, <a href="https://github.com/smdahlen/vagrant-hostmanager">vagrant-hostmanager</a>, that hooked into the <code>up</code> action for a new
-server. After server creation, a line containing the server&#8217;s new
+server. After server creation, a line containing the server&rsquo;s new
 IP address and host name is added to the <code>/etc/hosts</code> file of each active
 server within the Vagrant environment. Once the <code>vagrant up</code> command completes,
 all servers defined within the <code>Vagrantfile</code> can resolve to one another using
@@ -1053,7 +1053,7 @@ Additionally, it felt awkward that a recipe provisioning a single MongoDb
 replica set member would also attempt to initiate a replica set if all
 members were available.</p>
 
-<p>A Vagrant plugin seemed to be a better fit &#8211; it had access to the
+<p>A Vagrant plugin seemed to be a better fit &mdash; it had access to the
 <code>Vagrantfile</code> containing configuration for all servers in the environment and
 therefore could act on the environment itself. I created a plugin,
 <a href="https://github.com/smdahlen/vagrant-mongodb">vagrant-mongodb</a>, that provided an adminstrator with new configuration
@@ -1085,10 +1085,10 @@ aspects of <code>knife-solo</code> with Vagrant, I had the opportunity to use
 <a href="http://berkshelf.com/">Berkshelf</a> for cookbook dependency management. I collapsed my
 <code>marinara-kitchen</code> project into a single application cookbook called
 <code>marinara-cookbook</code> containing the recipes I wrote earlier. I defined my
-cookbook&#8217;s dependencies in the <code>metadata.rb</code> file:</p>
+cookbook&rsquo;s dependencies in the <code>metadata.rb</code> file:</p>
 
-<figure class='code'><figcaption><span>metadata.rb  </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span>metadata.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -1132,12 +1132,12 @@ are automatically available to each server during the provisioning process.</p>
 
 <p>With plugins to manage Digital Ocean droplets, synchronize a <code>/etc/hosts</code> file
 for server resolution, and initiate MongoDb replica sets, I was ready to
-define my application&#8217;s environment in a single <code>Vagrantfile</code>. Below is my
+define my application&rsquo;s environment in a single <code>Vagrantfile</code>. Below is my
 file that works with both VirtualBox and Digital Ocean (with a few manual
 tweaks required until Vagrant 1.2 is released):</p>
 
-<figure class='code'><figcaption><span>Vagrantfile  </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span>Vagrantfile </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -1394,19 +1394,19 @@ manually changing values.</p>
 in parallel for a multi-server environment. This will cut down my current time
 to build a new six-server environment from 15 minutes to ~3 minutes.</p>
 
-<h2>What&#8217;s Next</h2>
+<h2>What&rsquo;s Next</h2>
 
-<p>Overall, I&#8217;m quite pleased with the outcome. With this sprint complete, I
+<p>Overall, I&rsquo;m quite pleased with the outcome. With this sprint complete, I
 can now create and manage a multi-server environment for development, test, and
 production with the combination of Vagrant and Chef. Over the next six weeks
-I&#8217;ll be shifting my focus from infrastructure to product management
-defining my product&#8217;s scope and drafting a user experience in preparation
+I&rsquo;ll be shifting my focus from infrastructure to product management
+defining my product&rsquo;s scope and drafting a user experience in preparation
 for development. Stay tuned for more.</p>
 ]]></content>
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[Setup node.js servers within a load-balanced configuration]]></title>
+    <title type="html"><![CDATA[Setup node.js Servers Within a Load-balanced Configuration]]></title>
     <link href="http://smdahlen.github.com/blog/2013/03/18/setup-node-dot-js-servers-within-a-load-balanced-configuration/"/>
     <updated>2013-03-18T13:21:00-04:00</updated>
     <id>http://smdahlen.github.com/blog/2013/03/18/setup-node-dot-js-servers-within-a-load-balanced-configuration</id>
@@ -1424,9 +1424,9 @@ this setup.</p>
 
 <p>As I mentioned in my <a href="http://shawn.dahlen.me/blog/2013/03/06/automate-provisioning-of-secure-servers/">previous post</a>, I start each week defining the
 business value for the task at hand coupled with concise exit criteria to
-know when I&#8217;m done. This week&#8217;s task will ensure the conversion rate for
+know when I&rsquo;m done. This week&rsquo;s task will ensure the conversion rate for
 subscribers is not impacted as the product usage grows. I consider the
-first impression of the product&#8217;s experience extremely important and I don&#8217;t
+first impression of the product&rsquo;s experience extremely important and I don&rsquo;t
 want to see that disrupted as I try to scale a system in production.</p>
 
 <p>To complete the task, four critera had to be met:</p>
@@ -1463,8 +1463,8 @@ using <a href="https://npmjs.org/">npm</a>.</li>
 </ul>
 
 
-<figure class='code'><figcaption><span>package.json  </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span>package.json </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -1511,8 +1511,8 @@ using <a href="https://npmjs.org/">npm</a>.</li>
   using the log levels specified by syslog that will later be consolidated with
   an <a href="http://www.rsyslog.com/">rsyslog</a> server.</p>
 
-<figure class='code'><figcaption><span>server.js  </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span>server.js </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -1587,8 +1587,8 @@ references depending on the mode.</li>
 </ul>
 
 
-<figure class='code'><figcaption><span>server.js  </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span>server.js </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -1663,8 +1663,8 @@ references depending on the mode.</li>
 
 
 
-<figure class='code'><figcaption><span>templates/index.html  </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span>templates/index.html </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -1696,8 +1696,8 @@ references depending on the mode.</li>
   exported and mounted at the <em>/api</em> path on the main Express application in
   <em>server.js</em>.</p>
 
-<figure class='code'><figcaption><span>lib/api.js  </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span>lib/api.js </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -1746,8 +1746,8 @@ references depending on the mode.</li>
 
 
 
-<figure class='code'><figcaption><span>server.js  </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span>server.js </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -1770,8 +1770,8 @@ could be served by Express during development.</li>
 </ul>
 
 
-<figure class='code'><figcaption><span>component.json  </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span>component.json </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -1798,8 +1798,8 @@ could be served by Express during development.</li>
 
 
 
-<figure class='code'><figcaption><span>.bowerrc  </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span>.bowerrc </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 </pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="p">{</span>
@@ -1823,8 +1823,8 @@ stubbed out a simple Backbone view to test asset optimization later on.</li>
 </ul>
 
 
-<figure class='code'><figcaption><span>app/scripts/main.js  </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span>app/scripts/main.js </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -1875,8 +1875,8 @@ stubbed out a simple Backbone view to test asset optimization later on.</li>
 
 
 
-<figure class='code'><figcaption><span>app/scripts/marinara.js  </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span>app/scripts/marinara.js </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -1927,8 +1927,8 @@ I also lint both css and javascript files when changes occur. To kickoff this
 workflow, I run <em>grunt</em> in the root directory.</p>
 
 <p>I also used Grunt to optimize static assets. The <em>grunt-contrib-requirejs</em>
-plugin uses require.js&#8217;s <a href="http://requirejs.org/docs/optimization.html">optimizer</a> to concatnate and minify javascript.
-It also concatnate&#8217;s css by scanning for <em>@import</em> statements. I paired this
+plugin uses require.js&rsquo;s <a href="http://requirejs.org/docs/optimization.html">optimizer</a> to concatnate and minify javascript.
+It also concatnate&rsquo;s css by scanning for <em>@import</em> statements. I paired this
 with the <em>grunt-contrib-cssmin</em> plugin to minify css assets. To optimize
 assets and move them into the <em>public/</em> directory to be served by Express,
 I run:</p></li>
@@ -1959,8 +1959,8 @@ by the <a href="https://github.com/balbeko/chef-npm/">npm</a> cookbook.</li>
 </ul>
 
 
-<figure class='code'><figcaption><span>site-cookbooks/marinara/attributes/default.rb  </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span>site-cookbooks/marinara/attributes/default.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -1989,8 +1989,8 @@ by the <a href="https://github.com/balbeko/chef-npm/">npm</a> cookbook.</li>
 
 
 
-<figure class='code'><figcaption><span>site-cookbooks/marinara/recipes/application.rb  </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span>site-cookbooks/marinara/recipes/application.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -2024,8 +2024,8 @@ an application-specific user account.</li>
 </ul>
 
 
-<figure class='code'><figcaption><span>site-cookbooks/marinara/templates/default/marinara.conf.erb  </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span>site-cookbooks/marinara/templates/default/marinara.conf.erb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -2066,8 +2066,8 @@ an application-specific user account.</li>
 
 
 
-<figure class='code'><figcaption><span>site-cookbooks/marinara/recipes/application.rb  </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span>site-cookbooks/marinara/recipes/application.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -2086,14 +2086,14 @@ production mode (as opposed to development mode where Vagrant mounts the
 project directory), the recipe provisions the application user, creates
 the deployment and log directories, copies over a ssh deploy key, clones
 the <em>marinara</em> git repository, install dependencies, and optimizes assets. A
-number of default attributes drive the deployment &#8211; the most important
+number of default attributes drive the deployment &mdash; the most important
 of which is the <em>reference</em> attribute defining the git tag or branch to
 deploy.</li>
 </ul>
 
 
-<figure class='code'><figcaption><span>site-cookbooks/marinara/attributes/default.rb  </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span>site-cookbooks/marinara/attributes/default.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -2122,8 +2122,8 @@ deploy.</li>
 
 
 
-<figure class='code'><figcaption><span>site-cookbooks/marinara/recipes/application.rb  </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span>site-cookbooks/marinara/recipes/application.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -2293,8 +2293,8 @@ specified application port with the upstream HAProxy server as the source.</li>
 </ul>
 
 
-<figure class='code'><figcaption><span>site-cookbooks/marinara/recipes/application.rb  </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span>site-cookbooks/marinara/recipes/application.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -2323,10 +2323,10 @@ to use my configuration template instead. The code snippet below demonstrates
 this. In addition to providing custom configuration that references
 deployed application servers, I implemented a firewall rule to accept traffic
 on port 80 (the default value for the incoming_port attribute). In a future
-week, I intend to tune HAProxy&#8217;s configuration based on performance testing.</p>
+week, I intend to tune HAProxy&rsquo;s configuration based on performance testing.</p>
 
-<figure class='code'><figcaption><span>site-cookbooks/marinara/attributes/default.rb  </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span>site-cookbooks/marinara/attributes/default.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -2351,8 +2351,8 @@ week, I intend to tune HAProxy&#8217;s configuration based on performance testin
 
 
 
-<figure class='code'><figcaption><span>site-cookbooks/marinara/recipes/proxy.rb  </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span>site-cookbooks/marinara/recipes/proxy.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -2385,8 +2385,8 @@ week, I intend to tune HAProxy&#8217;s configuration based on performance testin
 
 
 
-<figure class='code'><figcaption><span>site-cookbooks/marinara/templates/default/haproxy.cfg.erb  </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span>site-cookbooks/marinara/templates/default/haproxy.cfg.erb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -2450,8 +2450,8 @@ Node.js application servers running on a private network so they could
 communicate with one another. Here is the configuration below using the new
 Vagrant 1.1 syntax:</p>
 
-<figure class='code'><figcaption><span>Vagrantfile  </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span>Vagrantfile </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -2568,7 +2568,7 @@ Vagrant 1.1 syntax:</p>
 
 <p>  With the Vagrantfile implemented, I brought the servers up and
   executed a quick test with curl against my endpoints. With a successful
-  response, the fourth criteria had been met and the week&#8217;s task complete.</p>
+  response, the fourth criteria had been met and the week&rsquo;s task complete.</p>
 
 <figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -2583,7 +2583,7 @@ Vagrant 1.1 syntax:</p>
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[Automate provisioning of secure servers]]></title>
+    <title type="html"><![CDATA[Automate Provisioning of Secure Servers]]></title>
     <link href="http://smdahlen.github.com/blog/2013/03/06/automate-provisioning-of-secure-servers/"/>
     <updated>2013-03-06T10:43:00-05:00</updated>
     <id>http://smdahlen.github.com/blog/2013/03/06/automate-provisioning-of-secure-servers</id>
@@ -2591,7 +2591,7 @@ Vagrant 1.1 syntax:</p>
 provisioning servers with a cloud provider. Specifically, I intended to
 leverage a solution such as Puppet or Chef to automate the setup and
 configuration of a server within the <a href="https://www.digitalocean.com">Digital Ocean</a> cloud hosting service
-following a few security best practices. Before starting each week&#8217;s
+following a few security best practices. Before starting each week&rsquo;s
 objective, I will be clarifying the business value and exit criteria to help
 keep the end in mind.</p>
 
@@ -2631,13 +2631,13 @@ modules developed by third-parties within our infrastrcture. While both products
 are great (I would recommend both), I felt that Chef and its community were
 pushing the envelope on reuse of infrastructure code with its data-driven
 approach (attributes, data bags) and package management solutions
-(<a href="https://github.com/applicationsonline/librarian">librarian</a> and <a href="http://berkshelf.com">berkshelf</a>). In the next section, I&#8217;ll demonstrate this
+(<a href="https://github.com/applicationsonline/librarian">librarian</a> and <a href="http://berkshelf.com">berkshelf</a>). In the next section, I&rsquo;ll demonstrate this
 reuse.</p>
 
 <p>In addition to selecting Chef, I also made the decision to use Chef Solo vs
 Chef Server. A large part of the decision had to do with keeping things simple.
 With the open source project, <a href="http://matschaffer.github.com/knife-solo/">knife-solo</a>, I was able to meet my exit
-criteria while still benefiting from 90% of Chef&#8217;s features.</p>
+criteria while still benefiting from 90% of Chef&rsquo;s features.</p>
 
 <h2>Provisioning a Secure Server</h2>
 
@@ -2649,7 +2649,7 @@ Ocean using Chef:</p>
  provide plugins to the Chef <a href="http://docs.opscode.com/knife.html">knife</a> command-line tool. knife-solo
  supports the provisioning of Chef cookbooks to a single server from a
  workstation. <a href="https://github.com/rmoriz/knife-digital_ocean">knife-digital_ocean</a> provides a wrapper around Digital
- Ocean&#8217;s API to create and destroy server instances. I added these gems
+ Ocean&rsquo;s API to create and destroy server instances. I added these gems
  to my Gemfile in my <a href="https://github.com/smdahlen/mac-bootstrap">mac bootstrap</a> project, but you could install
  them directly:</li>
 </ul>
@@ -2709,8 +2709,8 @@ Ocean using Chef:</p>
 </ul>
 
 
-<figure class='code'><figcaption><span>knife.rb  </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span>knife.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 </pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">knife</span><span class="o">[</span><span class="ss">:digital_ocean_client_id</span><span class="o">]</span> <span class="o">=</span> <span class="s1">&#39;xxxxxxxxxxxxxxxxxxxxx&#39;</span>
 </span><span class='line'><span class="n">knife</span><span class="o">[</span><span class="ss">:digital_ocean_api_key</span><span class="o">]</span>   <span class="o">=</span> <span class="s1">&#39;yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy&#39;</span>
@@ -2719,7 +2719,7 @@ Ocean using Chef:</p>
 
 <ul>
 <li><strong>Upload your ssh public key on Digital Ocean dashboard.</strong> To create servers
- that do not require a root password, I uploaded my workstation&#8217;s ssh public key
+ that do not require a root password, I uploaded my workstation&rsquo;s ssh public key
  within the <em>SSH Keys</em> section of the Digital Ocean dashboard. Once uploaded,
  I ran the following command (within the repository directory) to retrieve the ID
  of the ssh key to be used in the next step:</li>
@@ -2752,7 +2752,7 @@ Ocean using Chef:</p>
 
 <ul>
 <li><strong>Create an application cookbook.</strong> With the first exit criteria met, I created
-a new application cookbook that would define recipes configuring the product&#8217;s
+a new application cookbook that would define recipes configuring the product&rsquo;s
 servers. By default, librarian manages third-party cookbooks in the <em>cookbooks</em>
 directory so I created the <em>marinara</em> cookbook within the <em>site-cookbooks</em>
 directory.</li>
@@ -2772,8 +2772,8 @@ array (that may be redefined on a server by server basis) to install the package
 </ul>
 
 
-<figure class='code'><figcaption><span>site-cookbooks/marinara/attributes/default.rb  </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span>site-cookbooks/marinara/attributes/default.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 </pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># defines base packages</span>
 </span><span class='line'><span class="n">default</span><span class="o">.</span><span class="n">packages</span> <span class="o">=</span> <span class="sx">%w(vim git tmux)</span>
@@ -2782,8 +2782,8 @@ array (that may be redefined on a server by server basis) to install the package
 
 
 
-<figure class='code'><figcaption><span>site-cookbooks/marinara/recipes/default.rb  </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span>site-cookbooks/marinara/recipes/default.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -2812,8 +2812,8 @@ admin group.</p></li>
 </ul>
 
 
-<figure class='code'><figcaption><span>./data_bags/users/shawn.json  </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span>./data_bags/users/shawn.json </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -2850,8 +2850,8 @@ admin group.</p></li>
 
 
 
-<figure class='code'><figcaption><span>./site-cookbooks/marinara/metadata.rb  </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span>./site-cookbooks/marinara/metadata.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 </pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">depends</span> <span class="s1">&#39;user&#39;</span><span class="p">,</span> <span class="s1">&#39;~&gt; 0.3.0&#39;</span>
 </span><span class='line'><span class="n">depends</span> <span class="s1">&#39;homesick&#39;</span><span class="p">,</span> <span class="s1">&#39;~&gt; 0.3.2&#39;</span>
@@ -2860,8 +2860,8 @@ admin group.</p></li>
 
 
 
-<figure class='code'><figcaption><span>./site-cookbooks/marinara/attributes/default.rb  </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span>./site-cookbooks/marinara/attributes/default.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 </pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># defines user accounts and overriden user cookbook attributes</span>
@@ -2872,8 +2872,8 @@ admin group.</p></li>
 
 
 
-<figure class='code'><figcaption><span>./site-cookbooks/marinara/recipes/default.rb  </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span>./site-cookbooks/marinara/recipes/default.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 </pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># provisions user accounts and their dotfiles defined in a data bag</span>
@@ -2890,16 +2890,16 @@ and defining the appropriate default attributes.</li>
 </ul>
 
 
-<figure class='code'><figcaption><span>./site-cookbooks/marinara/metadata.rb  </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span>./site-cookbooks/marinara/metadata.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 </pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">depends</span> <span class="s1">&#39;openssh&#39;</span><span class="p">,</span> <span class="s1">&#39;~&gt; 1.1.4&#39;</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
 
 
-<figure class='code'><figcaption><span>./site-cookbooks/marinara/attributes/default.rb  </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span>./site-cookbooks/marinara/attributes/default.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -2918,8 +2918,8 @@ and defining the appropriate default attributes.</li>
 
 
 
-<figure class='code'><figcaption><span>./site-cookbooks/marinara/recipes/default.rb  </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span>./site-cookbooks/marinara/recipes/default.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 </pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># provisions ssh configured for no password auth and root login</span>
 </span><span class='line'><span class="n">include_recipe</span> <span class="s1">&#39;openssh&#39;</span>
@@ -2938,8 +2938,8 @@ and defining the appropriate default attributes.</li>
 </ul>
 
 
-<figure class='code'><figcaption><span>./data_bags/smarthosts/mailgun.json  </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span>./data_bags/smarthosts/mailgun.json </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -2958,8 +2958,8 @@ and defining the appropriate default attributes.</li>
 
 
 
-<figure class='code'><figcaption><span>./site-cookbooks/marinara/attributes/default.rb  </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span>./site-cookbooks/marinara/attributes/default.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -2980,8 +2980,8 @@ and defining the appropriate default attributes.</li>
 
 
 
-<figure class='code'><figcaption><span>./site-cookbooks/marinara/recipes/default.rb  </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span>./site-cookbooks/marinara/recipes/default.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -3053,16 +3053,16 @@ server rules. The rules were defined using a Chef <a href="http://docs.opscode.c
 </ul>
 
 
-<figure class='code'><figcaption><span>./site-cookbooks/marinara/metadata.rb  </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span>./site-cookbooks/marinara/metadata.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 </pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">depends</span> <span class="s1">&#39;simple_iptables&#39;</span><span class="p">,</span> <span class="s1">&#39;~&gt; 0.2.4&#39;</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
 
 
-<figure class='code'><figcaption><span>./site-cookbooks/marinara/recipes/default.rb  </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span>./site-cookbooks/marinara/recipes/default.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -3115,7 +3115,7 @@ was left was to tell Chef to apply the default cookbook recipe to the
 
 
 <figure class='code'><figcaption><span>./nodes/mycompany.com.json </span></figcaption>
- <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -3140,7 +3140,7 @@ was left was to tell Chef to apply the default cookbook recipe to the
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[Prepare business operations]]></title>
+    <title type="html"><![CDATA[Prepare Business Operations]]></title>
     <link href="http://smdahlen.github.com/blog/2013/03/05/prepare-business-operations/"/>
     <updated>2013-03-05T13:41:00-05:00</updated>
     <id>http://smdahlen.github.com/blog/2013/03/05/prepare-business-operations</id>
@@ -3239,7 +3239,7 @@ intend to push to all servers I work on.</li>
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[Shifting my Attention]]></title>
+    <title type="html"><![CDATA[Shifting My Attention]]></title>
     <link href="http://smdahlen.github.com/blog/2013/02/25/shifting-my-attention/"/>
     <updated>2013-02-25T12:35:00-05:00</updated>
     <id>http://smdahlen.github.com/blog/2013/02/25/shifting-my-attention</id>
@@ -3275,10 +3275,10 @@ mediocrity and unhappiness. For a while, I tried to do it all: put in long
 hours at work, exercise, spend quality time with my wife and son, and tinker
 with open source projects. Nothing received my best. It became clear that I
 needed to set limits on where I placed my attention so I could increase my
-focus on what I valued most &#8211; family and entrepreneurship.</p></li>
+focus on what I valued most &mdash; family and entrepreneurship.</p></li>
 <li><p><em>Failure contains the seeds of opportunity.</em>
 Since I was a child, I have had a love of learning nurtured by my mother
-and an interest for self-employment reflected by my father. I&#8217;ve desired
+and an interest for self-employment reflected by my father. I&rsquo;ve desired
 to launch my own software business where I had the opportunity to employ
 multiple skills including product and project management, design,
 engineering, operations, and marketing. However, a semi-concious fear of
