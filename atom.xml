@@ -4,7 +4,7 @@
   <title><![CDATA[Shawn Dahlen]]></title>
   <link href="http://smdahlen.github.com/atom.xml" rel="self"/>
   <link href="http://smdahlen.github.com/"/>
-  <updated>2014-03-12T16:45:42-04:00</updated>
+  <updated>2014-03-13T17:04:19-04:00</updated>
   <id>http://smdahlen.github.com/</id>
   <author>
     <name><![CDATA[Shawn Dahlen]]></name>
@@ -12,6 +12,643 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[4dashes - the Build System]]></title>
+    <link href="http://smdahlen.github.com/blog/2014/03/13/4dashes-the-build-system/"/>
+    <updated>2014-03-13T13:47:12-04:00</updated>
+    <id>http://smdahlen.github.com/blog/2014/03/13/4dashes-the-build-system</id>
+    <content type="html"><![CDATA[<p>This is a first in a series of posts discussing the implementation of the
+<a href="https://4dashes.com">4dashes</a> productivity tool. It covers the project structure and build
+system supporting a rapid developer workflow and creation of production assets.
+It is a continuation on the groundwork discussed <a href="http://shawn.dahlen.me/blog/2013/03/18/setup-node-dot-js-servers-within-a-load-balanced-configuration/">here</a> representing the
+state of the product at launch.</p>
+
+<!-- more -->
+
+
+<p>4dashes is a web-based product built on <a href="http://nodejs.org">Node.js</a> and <a href="http://angularjs.org">Angular</a>
+(deviating from the earlier setup using Backbone). Like many Node.js projects
+nowadays, the build system is based on <a href="http://gruntjs.com">Grunt</a>. Before discussing the
+<em>Gruntfile</em> mechanics, its beneficial to understand the project file structure.
+Here is the top-level:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>4dashes/
+</span><span class='line'>  app/
+</span><span class='line'>  lib/
+</span><span class='line'>  test/
+</span><span class='line'>  public/
+</span><span class='line'>  Gruntfile.js
+</span><span class='line'>  package.json
+</span><span class='line'>  server.js</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The <em>server.js</em> file loads configuration, sets up logging, and mounts RESTful
+endpoints defined within modules in the <em>lib/</em> directory. The details of this
+will be discussed in a future article. The <em>app/</em> directory contains the
+client-side assets that comprise the Angular-based web application and which
+are ultimately built to the <em>public/</em> directory to serve for production.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>4dashes/
+</span><span class='line'>  app/
+</span><span class='line'>      components/
+</span><span class='line'>          timer/
+</span><span class='line'>              timer.html
+</span><span class='line'>              timer.less
+</span><span class='line'>              timer.js
+</span><span class='line'>          charts/
+</span><span class='line'>          task-list/
+</span><span class='line'>          ...
+</span><span class='line'>      images/
+</span><span class='line'>      fonts/
+</span><span class='line'>          icons.woff
+</span><span class='line'>      index.html
+</span><span class='line'>      app.html
+</span><span class='line'>      app.less
+</span><span class='line'>      app.js</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Unlike other Angular projects, 4dashes was organized around the functional
+components that comprise the application (similar to what was recently
+<a href="https://docs.google.com/document/d/1XXMvReO8-Awi1EZXAXS4PzDzdNvV6pGcuaF4Q9821Es/pub">proposed</a> by the Angular team.) This approach align well with the
+upcoming <a href="https://developers.google.com/events/io/sessions/318907648">web components</a> technology. Each component is contained within
+its own directory with a file for template markup, styles, and script. The
+<em>app.*</em> files represent the entry point for the application and dynamically
+reference files for each component. When a new component is created
+(or removed), the build system updates the appropriate references. This is
+accomplished with the <a href="https://github.com/rrharvey/grunt-file-blocks">grunt-file-blocks</a> plugin.</p>
+
+<p>The plugin works by updating replacement blocks within a source file with
+references based on file matching patterns. <em>app.html</em> contains replacement
+blocks for third-party dependencies and component scripts:</p>
+
+<figure class='code'><figcaption><span>app.html </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+</pre></td><td class='code'><pre><code class='html'><span class='line'><span class="nt">&lt;html&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;body&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;header&gt;</span>...<span class="nt">&lt;/header&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;div</span> <span class="na">id=</span><span class="s">&quot;content&quot;</span> <span class="na">ng-view</span><span class="nt">&gt;&lt;/div&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;footer&gt;</span>...<span class="nt">&lt;/footer&gt;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c">&lt;!-- build:js app.js --&gt;</span>
+</span><span class='line'>      <span class="c">&lt;!-- fileblock:js dependencies --&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;script </span><span class="na">src=</span><span class="s">&quot;bower_components/angular/angular.min.js&quot;</span><span class="nt">&gt;&lt;/script&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;script </span><span class="na">src=</span><span class="s">&quot;bower_components/moment/moment.js&quot;</span><span class="nt">&gt;&lt;/script&gt;</span>
+</span><span class='line'>      ...
+</span><span class='line'>      <span class="c">&lt;!-- endfileblock --&gt;</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="c">&lt;!-- fileblock:js components --&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;script </span><span class="na">src=</span><span class="s">&quot;components/api/api.js&quot;</span><span class="nt">&gt;&lt;/script&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;script </span><span class="na">src=</span><span class="s">&quot;components/avatar/avatar.js&quot;</span><span class="nt">&gt;&lt;/script&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;script </span><span class="na">src=</span><span class="s">&quot;components/timer/timer.js&quot;</span><span class="nt">&gt;&lt;/script&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;script </span><span class="na">src=</span><span class="s">&quot;components/templates.js&quot;</span><span class="nt">&gt;&lt;/script&gt;</span>
+</span><span class='line'>      ...
+</span><span class='line'>      <span class="c">&lt;!-- endfileblock --&gt;</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="nt">&lt;script </span><span class="na">src=</span><span class="s">&quot;app.js&quot;</span><span class="nt">&gt;&lt;/script&gt;</span>
+</span><span class='line'>    <span class="c">&lt;!-- endbuild --&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;/body&gt;</span>
+</span><span class='line'><span class="nt">&lt;/html&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><em>app.less</em> follows the same pattern replacing a comment block with <code>@import</code>
+statements for components styles:</p>
+
+<figure class='code'><figcaption><span>app.less </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='css'><span class='line'><span class="o">//</span> <span class="nt">import</span> <span class="nt">base</span> <span class="nt">bootstrap</span> <span class="nt">styles</span>
+</span><span class='line'><span class="k">@import</span> <span class="s1">&#39;bower_components/bootstrap/less/bootstrap.less&#39;</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">//</span> <span class="nt">define</span> <span class="nt">color</span> <span class="nt">palette</span>
+</span><span class='line'><span class="k">@base-color</span><span class="o">:</span> <span class="nt">hsl</span><span class="o">(</span><span class="nt">45</span><span class="o">,</span> <span class="nt">15</span><span class="o">%,</span> <span class="nt">99</span><span class="o">%)</span><span class="p">;</span>
+</span><span class='line'><span class="k">@base-dark-color</span><span class="o">:</span> <span class="nt">hsl</span><span class="o">(</span><span class="nt">45</span><span class="o">,</span> <span class="nt">15</span><span class="o">%,</span> <span class="nt">89</span><span class="o">%)</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">//</span> <span class="nt">additional</span> <span class="nt">common</span> <span class="nt">styles</span>
+</span><span class='line'><span class="o">...</span>
+</span><span class='line'>
+</span><span class='line'><span class="c">/* fileblock:less components */</span>
+</span><span class='line'><span class="k">@import</span> <span class="s1">&#39;components/avatar/avatar.less&#39;</span><span class="p">;</span>
+</span><span class='line'><span class="k">@import</span> <span class="s1">&#39;components/timer/timer.less&#39;</span><span class="p">;</span>
+</span><span class='line'><span class="o">...</span>
+</span><span class='line'><span class="c">/* endfileblock */</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Finally, component template markup is pre-processed and compiled into a single
+<em>templates.js</em> file using the <a href="https://github.com/ericclemmons/grunt-angular-templates">grunt-angular-templates</a> plugin. While this
+wasn&rsquo;t technical required for a development workflow it did simplify references
+within unit testing code.</p>
+
+<p>The supporting Grunt configuration for these two plugins is as follows:</p>
+
+<figure class='code'><figcaption><span>Gruntfile.js </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="nx">module</span><span class="p">.</span><span class="nx">exports</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">grunt</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;matchdep&#39;</span><span class="p">).</span><span class="nx">filterDev</span><span class="p">(</span><span class="s1">&#39;grunt-*&#39;</span><span class="p">).</span><span class="nx">forEach</span><span class="p">(</span><span class="nx">grunt</span><span class="p">.</span><span class="nx">loadNpmTasks</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">dependencies</span> <span class="o">=</span> <span class="p">[</span> <span class="p">...</span> <span class="p">]</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nx">grunt</span><span class="p">.</span><span class="nx">initConfig</span><span class="p">({</span>
+</span><span class='line'>      <span class="nx">fileblocks</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>          <span class="nx">options</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>              <span class="nx">removeFiles</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+</span><span class='line'>              <span class="nx">templates</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>                  <span class="nx">less</span><span class="o">:</span> <span class="s1">&#39;@import \&#39;${file}\&#39;;&#39;</span>
+</span><span class='line'>              <span class="p">}</span>
+</span><span class='line'>          <span class="p">},</span>
+</span><span class='line'>          <span class="nx">js</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>              <span class="nx">src</span><span class="o">:</span> <span class="s1">&#39;app/app.html&#39;</span><span class="p">,</span>
+</span><span class='line'>              <span class="nx">blocks</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>                  <span class="nx">dependencies</span><span class="o">:</span> <span class="p">{</span> <span class="nx">cwd</span><span class="o">:</span> <span class="s1">&#39;app&#39;</span><span class="p">,</span> <span class="nx">src</span><span class="o">:</span> <span class="nx">dependencies</span> <span class="p">},</span>
+</span><span class='line'>                  <span class="nx">components</span><span class="o">:</span> <span class="p">{</span> <span class="nx">cwd</span><span class="o">:</span> <span class="s1">&#39;app&#39;</span><span class="p">,</span> <span class="nx">src</span><span class="o">:</span> <span class="s1">&#39;components/**/*.js&#39;</span> <span class="p">}</span>
+</span><span class='line'>              <span class="p">}</span>
+</span><span class='line'>          <span class="p">},</span>
+</span><span class='line'>          <span class="nx">less</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>              <span class="nx">src</span><span class="o">:</span> <span class="s1">&#39;app/app.less&#39;</span><span class="p">,</span>
+</span><span class='line'>              <span class="nx">blocks</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>                  <span class="nx">components</span><span class="o">:</span> <span class="p">{</span> <span class="nx">cwd</span><span class="o">:</span> <span class="s1">&#39;app&#39;</span><span class="p">,</span> <span class="nx">src</span><span class="o">:</span> <span class="s1">&#39;components/**/*.less&#39;</span> <span class="p">}</span>
+</span><span class='line'>              <span class="p">}</span>
+</span><span class='line'>          <span class="p">}</span>
+</span><span class='line'>      <span class="p">},</span>
+</span><span class='line'>      <span class="nx">ngtemplates</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>          <span class="nx">options</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>              <span class="nx">prefix</span><span class="o">:</span> <span class="s1">&#39;template/&#39;</span><span class="p">,</span>
+</span><span class='line'>              <span class="nx">standalone</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+</span><span class='line'>              <span class="nx">htmlmin</span><span class="o">:</span> <span class="p">{</span> <span class="nx">collapseWhitespace</span><span class="o">:</span> <span class="kc">true</span> <span class="p">}</span>
+</span><span class='line'>          <span class="p">},</span>
+</span><span class='line'>          <span class="nx">templates</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>              <span class="nx">cwd</span><span class="o">:</span> <span class="s1">&#39;app/components&#39;</span><span class="p">,</span>
+</span><span class='line'>              <span class="nx">src</span><span class="o">:</span> <span class="s1">&#39;**/*.html&#39;</span><span class="p">,</span>
+</span><span class='line'>              <span class="nx">dest</span><span class="o">:</span> <span class="s1">&#39;app/components/templates.js&#39;</span>
+</span><span class='line'>          <span class="p">}</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>  <span class="p">})</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This setup eliminated the need to manually update referenced assets and
+provided the basis for a rapid development workflow and a streamlined
+production build.</p>
+
+<p>During development, assets are served from the <em>app/</em> directory. A custom
+Grunt task was registered to start the server and reload on both client- and
+server-side changes. For client-side changes, less files and angular templates
+are processed and the browser is refreshed using <a href="http://livereload.com">LiveReload</a>. For
+server-side changes, the Node.js server process is restarted. During
+development, the developer simply runs <code>grunt dev</code> on the command line, points
+a browser at <code>http://localhost:8080</code>, and edits/saves code to view the changes.</p>
+
+<p>The following Grunt configuration supports this workflow. It leverages
+<a href="https://github.com/gruntjs/grunt-contrib-watch">grunt-contrib-watch</a> and <a href="https://github.com/ChrisWren/grunt-nodemon">grunt-nodemon</a> to watch and reload client-
+and server-side resources respectively. <a href="https://github.com/sindresorhus/grunt-concurrent">grunt-concurrent</a> allows these
+two plugins to run concurrently.</p>
+
+<figure class='code'><figcaption><span>Gruntfile.js </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="nx">module</span><span class="p">.</span><span class="nx">exports</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">grunt</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;matchdep&#39;</span><span class="p">).</span><span class="nx">filterDev</span><span class="p">(</span><span class="s1">&#39;grunt-*&#39;</span><span class="p">).</span><span class="nx">forEach</span><span class="p">(</span><span class="nx">grunt</span><span class="p">.</span><span class="nx">loadNpmTasks</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">dependencies</span> <span class="o">=</span> <span class="p">[</span> <span class="p">...</span> <span class="p">]</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nx">grunt</span><span class="p">.</span><span class="nx">initConfig</span><span class="p">({</span>
+</span><span class='line'>      <span class="nx">concurrent</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>          <span class="nx">dev</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>              <span class="nx">tasks</span><span class="o">:</span> <span class="p">[</span><span class="s1">&#39;nodemon&#39;</span><span class="p">,</span> <span class="s1">&#39;watch&#39;</span><span class="p">],</span>
+</span><span class='line'>              <span class="nx">options</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>                  <span class="nx">logConcurrentOutput</span><span class="o">:</span> <span class="kc">true</span>
+</span><span class='line'>              <span class="p">}</span>
+</span><span class='line'>          <span class="p">}</span>
+</span><span class='line'>      <span class="p">},</span>
+</span><span class='line'>      <span class="nx">nodemon</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>          <span class="nx">dev</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>              <span class="nx">options</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>                  <span class="nx">file</span><span class="o">:</span> <span class="s1">&#39;server.js&#39;</span><span class="p">,</span>
+</span><span class='line'>                  <span class="nx">ignoredFiles</span><span class="o">:</span> <span class="p">[</span><span class="s1">&#39;app&#39;</span><span class="p">,</span> <span class="s1">&#39;test&#39;</span><span class="p">,</span> <span class="s1">&#39;node_modules&#39;</span><span class="p">],</span>
+</span><span class='line'>                  <span class="nx">watchedExtensions</span><span class="o">:</span> <span class="p">[</span><span class="s1">&#39;js&#39;</span><span class="p">]</span>
+</span><span class='line'>              <span class="p">}</span>
+</span><span class='line'>          <span class="p">}</span>
+</span><span class='line'>      <span class="p">},</span>
+</span><span class='line'>      <span class="nx">watch</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>          <span class="nx">app</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>              <span class="nx">options</span><span class="o">:</span> <span class="p">{</span> <span class="nx">livereload</span><span class="o">:</span> <span class="kc">true</span> <span class="p">},</span>
+</span><span class='line'>              <span class="nx">files</span><span class="o">:</span> <span class="p">[</span>
+</span><span class='line'>                  <span class="s1">&#39;app/app.*&#39;</span><span class="p">,</span>
+</span><span class='line'>                  <span class="s1">&#39;app/components/**/*.js&#39;</span><span class="p">,</span>
+</span><span class='line'>                  <span class="s1">&#39;app/images/*&#39;</span>
+</span><span class='line'>              <span class="p">]</span>
+</span><span class='line'>          <span class="p">},</span>
+</span><span class='line'>          <span class="nx">templates</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>              <span class="nx">tasks</span><span class="o">:</span> <span class="p">[</span><span class="s1">&#39;ngtemplates&#39;</span><span class="p">],</span>
+</span><span class='line'>              <span class="nx">files</span><span class="o">:</span> <span class="p">[</span><span class="s1">&#39;app/components/**/*.html&#39;</span><span class="p">]</span>
+</span><span class='line'>          <span class="p">},</span>
+</span><span class='line'>          <span class="nx">less</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>              <span class="nx">tasks</span><span class="o">:</span> <span class="p">[</span><span class="s1">&#39;less&#39;</span><span class="p">],</span>
+</span><span class='line'>              <span class="nx">files</span><span class="o">:</span> <span class="p">[</span><span class="s1">&#39;app/app.less&#39;</span><span class="p">,</span> <span class="s1">&#39;app/components/**/*.less&#39;</span><span class="p">]</span>
+</span><span class='line'>          <span class="p">}</span>
+</span><span class='line'>      <span class="p">},</span>
+</span><span class='line'>      <span class="nx">less</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>          <span class="nx">build</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>              <span class="nx">files</span><span class="o">:</span> <span class="p">{</span> <span class="s1">&#39;app/app.css&#39;</span><span class="o">:</span> <span class="s1">&#39;app/app.less&#39;</span> <span class="p">}</span>
+</span><span class='line'>          <span class="p">}</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>  <span class="p">})</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nx">grunt</span><span class="p">.</span><span class="nx">registerTask</span><span class="p">(</span><span class="s1">&#39;dev&#39;</span><span class="p">,</span> <span class="p">[</span>
+</span><span class='line'>      <span class="s1">&#39;ngtemplates&#39;</span><span class="p">,</span>
+</span><span class='line'>      <span class="s1">&#39;fileblocks:js&#39;</span><span class="p">,</span>
+</span><span class='line'>      <span class="s1">&#39;fileblocks:less&#39;</span><span class="p">,</span>
+</span><span class='line'>      <span class="s1">&#39;less&#39;</span><span class="p">,</span>
+</span><span class='line'>      <span class="s1">&#39;concurrent&#39;</span>
+</span><span class='line'>  <span class="p">])</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>For production, the build system uses the excellent <a href="https://github.com/yeoman/grunt-usemin">grunt-usemin</a> plugin
+to replace non-optimized scripts and stylesheets in <em>app.html</em> with a
+reference to a single optimized <em>app.js</em> and <em>app.css</em> file. This is
+combined with the <a href="https://github.com/cbas/grunt-rev">grunt-rev</a> plugin for asset revisioning to support cache
+busting when changes are made. Ultimately, the application consists of three
+core files, <em>app.html</em>, <em>app.js</em>, and <em>app.css</em> with the later two served with
+an explicit cache header.</p>
+
+<p>To round out the production build, <a href="https://github.com/btford/grunt-ngmin">grunt-ngmin</a> is used to pre-minify
+Angular scripts so that minifers appropriately handle the dependency
+injection style used by the framework.</p>
+
+<figure class='code'><figcaption><span>Gruntfile.js </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+<span class='line-number'>76</span>
+<span class='line-number'>77</span>
+<span class='line-number'>78</span>
+<span class='line-number'>79</span>
+<span class='line-number'>80</span>
+<span class='line-number'>81</span>
+<span class='line-number'>82</span>
+<span class='line-number'>83</span>
+<span class='line-number'>84</span>
+<span class='line-number'>85</span>
+<span class='line-number'>86</span>
+<span class='line-number'>87</span>
+<span class='line-number'>88</span>
+<span class='line-number'>89</span>
+<span class='line-number'>90</span>
+<span class='line-number'>91</span>
+<span class='line-number'>92</span>
+<span class='line-number'>93</span>
+<span class='line-number'>94</span>
+<span class='line-number'>95</span>
+<span class='line-number'>96</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="nx">module</span><span class="p">.</span><span class="nx">exports</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">grunt</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;matchdep&#39;</span><span class="p">).</span><span class="nx">filterDev</span><span class="p">(</span><span class="s1">&#39;grunt-*&#39;</span><span class="p">).</span><span class="nx">forEach</span><span class="p">(</span><span class="nx">grunt</span><span class="p">.</span><span class="nx">loadNpmTasks</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">dependencies</span> <span class="o">=</span> <span class="p">[</span> <span class="p">...</span> <span class="p">]</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nx">grunt</span><span class="p">.</span><span class="nx">initConfig</span><span class="p">({</span>
+</span><span class='line'>      <span class="nx">clean</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>          <span class="nx">build</span><span class="o">:</span> <span class="p">[</span><span class="s1">&#39;public&#39;</span><span class="p">],</span>
+</span><span class='line'>          <span class="nx">templates</span><span class="o">:</span> <span class="p">[</span><span class="s1">&#39;app/templates/**/*.js&#39;</span><span class="p">],</span>
+</span><span class='line'>          <span class="nx">less</span><span class="o">:</span> <span class="p">[</span><span class="s1">&#39;app/styles/*.css&#39;</span><span class="p">],</span>
+</span><span class='line'>          <span class="nx">test</span><span class="o">:</span> <span class="p">[</span><span class="s1">&#39;test/**/*.log&#39;</span><span class="p">]</span>
+</span><span class='line'>      <span class="p">},</span>
+</span><span class='line'>      <span class="nx">copy</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>          <span class="nx">fonts</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>              <span class="nx">expand</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+</span><span class='line'>              <span class="nx">cwd</span><span class="o">:</span> <span class="s1">&#39;app/fonts&#39;</span><span class="p">,</span>
+</span><span class='line'>              <span class="nx">src</span><span class="o">:</span> <span class="s1">&#39;**&#39;</span><span class="p">,</span>
+</span><span class='line'>              <span class="nx">dest</span><span class="o">:</span> <span class="s1">&#39;public/fonts/&#39;</span><span class="p">,</span>
+</span><span class='line'>              <span class="nx">flatten</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+</span><span class='line'>              <span class="nx">filter</span><span class="o">:</span> <span class="s1">&#39;isFile&#39;</span>
+</span><span class='line'>          <span class="p">},</span>
+</span><span class='line'>          <span class="nx">sounds</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>              <span class="nx">expand</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+</span><span class='line'>              <span class="nx">cwd</span><span class="o">:</span> <span class="s1">&#39;app/sounds&#39;</span><span class="p">,</span>
+</span><span class='line'>              <span class="nx">src</span><span class="o">:</span> <span class="s1">&#39;**&#39;</span><span class="p">,</span>
+</span><span class='line'>              <span class="nx">dest</span><span class="o">:</span> <span class="s1">&#39;public/sounds/&#39;</span><span class="p">,</span>
+</span><span class='line'>              <span class="nx">flatten</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+</span><span class='line'>              <span class="nx">filter</span><span class="o">:</span> <span class="s1">&#39;isFile&#39;</span>
+</span><span class='line'>          <span class="p">}</span>
+</span><span class='line'>      <span class="p">},</span>
+</span><span class='line'>      <span class="nx">useminPrepare</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>          <span class="nx">options</span><span class="o">:</span> <span class="p">{</span> <span class="nx">dest</span><span class="o">:</span> <span class="s1">&#39;public&#39;</span> <span class="p">},</span>
+</span><span class='line'>          <span class="nx">html</span><span class="o">:</span> <span class="s1">&#39;app/*.html&#39;</span>
+</span><span class='line'>      <span class="p">},</span>
+</span><span class='line'>      <span class="nx">usemin</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>          <span class="nx">html</span><span class="o">:</span> <span class="s1">&#39;public/*.html&#39;</span><span class="p">,</span>
+</span><span class='line'>          <span class="nx">css</span><span class="o">:</span> <span class="p">[</span><span class="s1">&#39;public/*.css&#39;</span><span class="p">,</span> <span class="s1">&#39;public/index.html&#39;</span><span class="p">],</span>
+</span><span class='line'>          <span class="nx">js</span><span class="o">:</span> <span class="p">[</span><span class="s1">&#39;public/*.js&#39;</span><span class="p">],</span>
+</span><span class='line'>          <span class="nx">options</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>              <span class="nx">patterns</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>                  <span class="nx">js</span><span class="o">:</span> <span class="p">[[</span>
+</span><span class='line'>                      <span class="sr">/[&quot;&#39;]([^:&quot;&#39;]+\.(?:png|gif|jpe?g|css|js))[&quot;&#39;]/img</span><span class="p">,</span>
+</span><span class='line'>                      <span class="s1">&#39;Update JavaScript with assets in strings&#39;</span>
+</span><span class='line'>                  <span class="p">]]</span>
+</span><span class='line'>              <span class="p">}</span>
+</span><span class='line'>          <span class="p">}</span>
+</span><span class='line'>      <span class="p">},</span>
+</span><span class='line'>      <span class="nx">htmlmin</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>          <span class="nx">build</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>              <span class="nx">files</span><span class="o">:</span> <span class="p">[{</span>
+</span><span class='line'>                  <span class="nx">expand</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+</span><span class='line'>                  <span class="nx">cwd</span><span class="o">:</span> <span class="s1">&#39;app&#39;</span><span class="p">,</span>
+</span><span class='line'>                  <span class="nx">src</span><span class="o">:</span> <span class="s1">&#39;*.html&#39;</span><span class="p">,</span>
+</span><span class='line'>                  <span class="nx">dest</span><span class="o">:</span> <span class="s1">&#39;public&#39;</span>
+</span><span class='line'>              <span class="p">}]</span>
+</span><span class='line'>          <span class="p">}</span>
+</span><span class='line'>      <span class="p">},</span>
+</span><span class='line'>      <span class="nx">imagemin</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>          <span class="nx">build</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>              <span class="nx">files</span><span class="o">:</span> <span class="p">[{</span>
+</span><span class='line'>                  <span class="nx">expand</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+</span><span class='line'>                  <span class="nx">cwd</span><span class="o">:</span> <span class="s1">&#39;app/images&#39;</span><span class="p">,</span>
+</span><span class='line'>                  <span class="nx">src</span><span class="o">:</span> <span class="s1">&#39;*.{jpg,png}&#39;</span><span class="p">,</span>
+</span><span class='line'>                  <span class="nx">dest</span><span class="o">:</span> <span class="s1">&#39;public/images&#39;</span>
+</span><span class='line'>              <span class="p">}]</span>
+</span><span class='line'>          <span class="p">}</span>
+</span><span class='line'>      <span class="p">},</span>
+</span><span class='line'>      <span class="nx">ngmin</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>          <span class="nx">build</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>              <span class="nx">files</span><span class="o">:</span> <span class="p">{</span> <span class="s1">&#39;public/app.js&#39;</span><span class="o">:</span> <span class="s1">&#39;public/app.js&#39;</span> <span class="p">}</span>
+</span><span class='line'>          <span class="p">}</span>
+</span><span class='line'>      <span class="p">},</span>
+</span><span class='line'>      <span class="nx">rev</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>          <span class="nx">build</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>              <span class="nx">src</span><span class="o">:</span> <span class="p">[</span><span class="s1">&#39;public/**/*.{js,css,png,jpg,woff}&#39;</span><span class="p">]</span>
+</span><span class='line'>          <span class="p">}</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>  <span class="p">})</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nx">grunt</span><span class="p">.</span><span class="nx">registerTask</span><span class="p">(</span><span class="s1">&#39;build&#39;</span><span class="p">,</span> <span class="p">[</span>
+</span><span class='line'>      <span class="s1">&#39;clean&#39;</span><span class="p">,</span>
+</span><span class='line'>      <span class="s1">&#39;fileblocks:js&#39;</span><span class="p">,</span>
+</span><span class='line'>      <span class="s1">&#39;fileblocks:less&#39;</span><span class="p">,</span>
+</span><span class='line'>      <span class="s1">&#39;less&#39;</span><span class="p">,</span>
+</span><span class='line'>      <span class="s1">&#39;copy&#39;</span><span class="p">,</span>
+</span><span class='line'>      <span class="s1">&#39;useminPrepare&#39;</span><span class="p">,</span>
+</span><span class='line'>      <span class="s1">&#39;ngtemplates&#39;</span><span class="p">,</span>
+</span><span class='line'>      <span class="s1">&#39;concat&#39;</span><span class="p">,</span>
+</span><span class='line'>      <span class="s1">&#39;htmlmin&#39;</span><span class="p">,</span>
+</span><span class='line'>      <span class="s1">&#39;imagemin&#39;</span><span class="p">,</span>
+</span><span class='line'>      <span class="s1">&#39;cssmin&#39;</span><span class="p">,</span>
+</span><span class='line'>      <span class="s1">&#39;ngmin&#39;</span><span class="p">,</span>
+</span><span class='line'>      <span class="s1">&#39;uglify&#39;</span><span class="p">,</span>
+</span><span class='line'>      <span class="s1">&#39;rev&#39;</span><span class="p">,</span>
+</span><span class='line'>      <span class="s1">&#39;usemin&#39;</span>
+</span><span class='line'>  <span class="p">])</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>To conclude, a new production server can be run with the following commands:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ git clone 4dashes.git
+</span><span class='line'>$ cd 4dashes
+</span><span class='line'>$ npm install --production
+</span><span class='line'>$ bower install --production
+</span><span class='line'>$ grunt build
+</span><span class='line'>$ NODE_ENV=production node server.js</span></code></pre></td></tr></table></div></figure>
+
+
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Working Smarter, Not Longer]]></title>
