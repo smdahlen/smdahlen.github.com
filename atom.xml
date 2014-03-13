@@ -4,7 +4,7 @@
   <title><![CDATA[Shawn Dahlen]]></title>
   <link href="http://smdahlen.github.com/atom.xml" rel="self"/>
   <link href="http://smdahlen.github.com/"/>
-  <updated>2014-03-13T17:04:19-04:00</updated>
+  <updated>2014-03-13T17:18:38-04:00</updated>
   <id>http://smdahlen.github.com/</id>
   <author>
     <name><![CDATA[Shawn Dahlen]]></name>
@@ -18,7 +18,7 @@
     <link href="http://smdahlen.github.com/blog/2014/03/13/4dashes-the-build-system/"/>
     <updated>2014-03-13T13:47:12-04:00</updated>
     <id>http://smdahlen.github.com/blog/2014/03/13/4dashes-the-build-system</id>
-    <content type="html"><![CDATA[<p>This is a first in a series of posts discussing the implementation of the
+    <content type="html"><![CDATA[<p>This is the first in a series of posts discussing the implementation of the
 <a href="https://4dashes.com">4dashes</a> productivity tool. It covers the project structure and build
 system supporting a rapid developer workflow and creation of production assets.
 It is a continuation on the groundwork discussed <a href="http://shawn.dahlen.me/blog/2013/03/18/setup-node-dot-js-servers-within-a-load-balanced-configuration/">here</a> representing the
