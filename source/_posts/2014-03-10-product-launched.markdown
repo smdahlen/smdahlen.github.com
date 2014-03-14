@@ -23,8 +23,6 @@ Unfortunately I was unable to keep up with the blogging during the startup
 period. My time and attention were required on the pressing matter of product 
 design and development. With that complete, I will be posting several new 
 articles over the next two weeks that summarize why and how I built 4dashes. 
-Those will be available at [blog.4dashes.com][3] shortly.
 
 [1]: https://4dashes.com
 [2]: http://www.indiegogo.com/projects/4dashes-turn-work-into-serious-fun
-[3]: http://blog.4dashes.com
