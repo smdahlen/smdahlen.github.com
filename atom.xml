@@ -4,7 +4,7 @@
   <title><![CDATA[Shawn Dahlen]]></title>
   <link href="http://smdahlen.github.com/atom.xml" rel="self"/>
   <link href="http://smdahlen.github.com/"/>
-  <updated>2014-03-13T17:31:36-04:00</updated>
+  <updated>2014-03-17T16:37:17-04:00</updated>
   <id>http://smdahlen.github.com/</id>
   <author>
     <name><![CDATA[Shawn Dahlen]]></name>
@@ -12,6 +12,788 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[4dashes - the API]]></title>
+    <link href="http://smdahlen.github.com/blog/2014/03/17/4dashes-the-api/"/>
+    <updated>2014-03-17T12:02:55-04:00</updated>
+    <id>http://smdahlen.github.com/blog/2014/03/17/4dashes-the-api</id>
+    <content type="html"><![CDATA[<p>This is the second in a series of posts discussing the implementation of the
+<a href="https://4dashes.com">4dashes</a> productivity tool. It covers the server-side API implementation
+for HTTP web services built on <a href="http://nodejs.org">Node.js</a> and <a href="http://expressjs.com">Express</a>. It is an in-depth
+continuation of the devops discussion for deploying a <a href="http://shawn.dahlen.me/blog/2013/03/18/setup-node-dot-js-servers-within-a-load-balanced-configuration/">load-balanced
+configuration</a>.</p>
+
+<!-- more -->
+
+
+<p>4dashes is implemented as an Express application. The main application, defined
+in <em>server.js</em>, loads configuration, configures logging, and detects
+unsupported user agents. It delegates the remaining functionality to mounted
+sub-applications. Specifically, one serves static assets that comprise the
+client-side Angular application (SSL and caching is offloaded to a reverse
+proxy) while the other handles API requests. Below is stripped down version of
+<em>server.js</em> highlighting configuration loaded for the API sub-application and
+the mounting of the two apps:</p>
+
+<figure class='code'><figcaption><span>server.js </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">var</span> <span class="nx">express</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;express&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">app</span> <span class="o">=</span> <span class="nx">express</span><span class="p">()</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">Log</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">api</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;./lib/api&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">assets</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;./lib/assets&#39;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// define setting for log level</span>
+</span><span class='line'><span class="nx">app</span><span class="p">.</span><span class="nx">set</span><span class="p">(</span><span class="s1">&#39;log level&#39;</span><span class="p">,</span> <span class="nx">process</span><span class="p">.</span><span class="nx">env</span><span class="p">.</span><span class="nx">DASHES_LOG_LEVEL</span> <span class="o">||</span> <span class="nx">Log</span><span class="p">.</span><span class="nx">DEBUG</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// define setting for port to bind application to</span>
+</span><span class='line'><span class="nx">app</span><span class="p">.</span><span class="nx">set</span><span class="p">(</span><span class="s1">&#39;port&#39;</span><span class="p">,</span> <span class="nx">process</span><span class="p">.</span><span class="nx">env</span><span class="p">.</span><span class="nx">DASHES_PORT</span> <span class="o">||</span> <span class="mi">8080</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// define setting for 256 bit token key (base64 encoding)</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">key</span> <span class="o">=</span> <span class="s1">&#39;5zgIDUlloyybplQZtkTzbwoZJusp+SLJj8vjBjqiCh8=&#39;</span>
+</span><span class='line'><span class="nx">app</span><span class="p">.</span><span class="nx">set</span><span class="p">(</span><span class="s1">&#39;token key&#39;</span><span class="p">,</span> <span class="nx">process</span><span class="p">.</span><span class="nx">env</span><span class="p">.</span><span class="nx">DASHES_TOKEN_KEY</span> <span class="o">||</span> <span class="nx">key</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// define setting for max age of token</span>
+</span><span class='line'><span class="nx">app</span><span class="p">.</span><span class="nx">set</span><span class="p">(</span><span class="s1">&#39;token age&#39;</span><span class="p">,</span> <span class="nx">process</span><span class="p">.</span><span class="nx">env</span><span class="p">.</span><span class="nx">DASHES_TOKEN_AGE</span> <span class="o">||</span> <span class="mi">60</span><span class="o">*</span><span class="mi">60</span><span class="o">*</span><span class="mi">1000</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// define setting for mongodb database name</span>
+</span><span class='line'><span class="nx">app</span><span class="p">.</span><span class="nx">set</span><span class="p">(</span><span class="s1">&#39;db name&#39;</span><span class="p">,</span> <span class="nx">process</span><span class="p">.</span><span class="nx">env</span><span class="p">.</span><span class="nx">DASHES_DB_NAME</span> <span class="o">||</span> <span class="s1">&#39;4dashes&#39;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// define setting for mongodb hosts</span>
+</span><span class='line'><span class="nx">app</span><span class="p">.</span><span class="nx">set</span><span class="p">(</span><span class="s1">&#39;db hosts&#39;</span><span class="p">,</span> <span class="nx">process</span><span class="p">.</span><span class="nx">env</span><span class="p">.</span><span class="nx">DASHES_DB_HOSTS</span> <span class="o">||</span> <span class="s1">&#39;localhost&#39;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// configure default logger</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">logger</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Log</span><span class="p">(</span><span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;log level&#39;</span><span class="p">))</span>
+</span><span class='line'><span class="nx">app</span><span class="p">.</span><span class="nx">use</span><span class="p">(</span><span class="kd">function</span> <span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">next</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">req</span><span class="p">.</span><span class="nx">log</span> <span class="o">=</span> <span class="nx">logger</span>
+</span><span class='line'>  <span class="nx">next</span><span class="p">()</span>
+</span><span class='line'><span class="p">})</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// log all requests if log level is INFO or higher using log module format</span>
+</span><span class='line'><span class="k">if</span> <span class="p">(</span><span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;log level&#39;</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="nx">Log</span><span class="p">.</span><span class="nx">INFO</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">format</span> <span class="o">=</span> <span class="s1">&#39;[:date] INFO :remote-addr - :method :url &#39;</span> <span class="o">+</span>
+</span><span class='line'>      <span class="s1">&#39;:status :res[content-length] - :response-time ms&#39;</span><span class="p">;</span>
+</span><span class='line'>  <span class="nx">express</span><span class="p">.</span><span class="nx">logger</span><span class="p">.</span><span class="nx">token</span><span class="p">(</span><span class="s1">&#39;date&#39;</span><span class="p">,</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span> <span class="k">return</span> <span class="k">new</span> <span class="nb">Date</span><span class="p">()</span> <span class="p">})</span>
+</span><span class='line'>  <span class="nx">app</span><span class="p">.</span><span class="nx">use</span><span class="p">(</span><span class="nx">express</span><span class="p">.</span><span class="nx">logger</span><span class="p">(</span><span class="nx">format</span><span class="p">))</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// mount assets and api sub-applications</span>
+</span><span class='line'><span class="nx">app</span><span class="p">.</span><span class="nx">use</span><span class="p">(</span><span class="s1">&#39;/api&#39;</span><span class="p">,</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;./lib/api&#39;</span><span class="p">))</span>
+</span><span class='line'><span class="nx">app</span><span class="p">.</span><span class="nx">use</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">,</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;./lib/assets&#39;</span><span class="p">))</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">app</span><span class="p">.</span><span class="nx">listen</span><span class="p">(</span><span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;port&#39;</span><span class="p">))</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The file, <em>api.js</em>, defines the Express application responsible for handling
+api requests. It is itself comprised of sub-applications that handle requests
+for the three core resources: users, tasks, and summaries.</p>
+
+<figure class='code'><figcaption><span>api.js </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">var</span> <span class="nx">express</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;express&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">app</span> <span class="o">=</span> <span class="nx">express</span><span class="p">()</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">db</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;./db&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">auth</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;./auth&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">users</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;./users&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">tasks</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;./tasks&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">summaries</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;./summaries&#39;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// establish database connection</span>
+</span><span class='line'><span class="nx">app</span><span class="p">.</span><span class="nx">use</span><span class="p">(</span><span class="nx">db</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// parse request body based on content type</span>
+</span><span class='line'><span class="nx">app</span><span class="p">.</span><span class="nx">use</span><span class="p">(</span><span class="nx">express</span><span class="p">.</span><span class="nx">bodyParser</span><span class="p">())</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// define setting for token validation</span>
+</span><span class='line'><span class="nx">app</span><span class="p">.</span><span class="nx">set</span><span class="p">(</span><span class="s1">&#39;validate&#39;</span><span class="p">,</span> <span class="nx">auth</span><span class="p">.</span><span class="nx">validate</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// mount resources</span>
+</span><span class='line'><span class="nx">app</span><span class="p">.</span><span class="nx">use</span><span class="p">(</span><span class="s1">&#39;/token&#39;</span><span class="p">,</span> <span class="nx">auth</span><span class="p">)</span>
+</span><span class='line'><span class="nx">app</span><span class="p">.</span><span class="nx">use</span><span class="p">(</span><span class="s1">&#39;/users&#39;</span><span class="p">,</span> <span class="nx">users</span><span class="p">)</span>
+</span><span class='line'><span class="nx">app</span><span class="p">.</span><span class="nx">use</span><span class="p">(</span><span class="s1">&#39;/tasks&#39;</span><span class="p">,</span> <span class="nx">tasks</span><span class="p">)</span>
+</span><span class='line'><span class="nx">app</span><span class="p">.</span><span class="nx">use</span><span class="p">(</span><span class="s1">&#39;/summaries&#39;</span><span class="p">,</span> <span class="nx">summaries</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// handle errors</span>
+</span><span class='line'><span class="nx">app</span><span class="p">.</span><span class="nx">use</span><span class="p">(</span><span class="kd">function</span> <span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">next</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">req</span><span class="p">.</span><span class="nx">log</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="nx">err</span><span class="p">.</span><span class="nx">message</span><span class="p">)</span>
+</span><span class='line'>  <span class="nx">res</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="mi">500</span><span class="p">)</span>
+</span><span class='line'><span class="p">})</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">module</span><span class="p">.</span><span class="nx">exports</span> <span class="o">=</span> <span class="nx">app</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>In addition to configuring middleware for parsing JSON request payloads and
+converting internal errors into a 500 response code, the api application
+imports and uses a database middleware function. This function checks if a
+database connection (to a replica set) is established, and if not, attempts to
+connect for use in the request pipeline. This approach allowed the startup
+order of the application and database servers to be decoupled. The
+<a href="http://mongoosejs.com">Mongoose</a> library is used to communicate with <a href="http://mongodb.org">MongoDb</a>.</p>
+
+<figure class='code'><figcaption><span>db.js </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">var</span> <span class="nx">mongoose</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;mongoose&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">hosts</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">module</span><span class="p">.</span><span class="nx">exports</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">next</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="nx">hosts</span> <span class="o">===</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nx">hosts</span> <span class="o">=</span> <span class="nx">req</span><span class="p">.</span><span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;db hosts&#39;</span><span class="p">)</span>
+</span><span class='line'>      <span class="nx">hosts</span> <span class="o">=</span> <span class="nx">hosts</span><span class="p">.</span><span class="nx">replace</span><span class="p">(</span><span class="sr">/\s+/g</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="p">).</span><span class="nx">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
+</span><span class='line'>      <span class="nx">hosts</span> <span class="o">=</span> <span class="nx">hosts</span><span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="kd">function</span> <span class="p">(</span><span class="nx">host</span><span class="p">,</span> <span class="nx">index</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>          <span class="k">return</span> <span class="s1">&#39;mongodb://&#39;</span> <span class="o">+</span> <span class="nx">host</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nx">req</span><span class="p">.</span><span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;db name&#39;</span><span class="p">)</span>
+</span><span class='line'>      <span class="p">})</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="nx">mongoose</span><span class="p">.</span><span class="nx">connection</span><span class="p">.</span><span class="nx">readyState</span> <span class="o">===</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nx">mongoose</span><span class="p">.</span><span class="nx">connection</span><span class="p">.</span><span class="nx">once</span><span class="p">(</span><span class="s1">&#39;error&#39;</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>          <span class="k">return</span> <span class="nx">next</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span>
+</span><span class='line'>      <span class="p">})</span>
+</span><span class='line'>      <span class="nx">mongoose</span><span class="p">.</span><span class="nx">connect</span><span class="p">(</span><span class="nx">hosts</span><span class="p">.</span><span class="nx">join</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">))</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="nx">next</span><span class="p">()</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>To authenticate and authorize requests, a simple token-based approach was
+implemented. Upon successful authentication against the <code>/api/token</code> endpoint,
+a signed token is returned in a response header containing the user&rsquo;s id and
+expiration timestamp. Subsequent API requests are authenticated by the token
+passed within a request header and authorized by confirming the user&rsquo;s
+ownership of a resource. A new token is returned in each API response extending
+the expiration window. To mitigate against session hijacking, all communication
+is encrypted with SSL.</p>
+
+<p>The file, <em>auth.js</em>, implements the <code>/api/token</code> endpoint. Additionally, it
+exports (as a property of the Express application) a <code>validate</code> middleware
+function that is leveraged by the other API sub-applications.</p>
+
+<figure class='code'><figcaption><span>auth.js </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">var</span> <span class="nx">app</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;express&#39;</span><span class="p">)()</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">crypto</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;crypto&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">User</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;./models/user&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">TOKEN_HEADER</span> <span class="o">=</span> <span class="nx">app</span><span class="p">.</span><span class="nx">TOKEN_HEADER</span> <span class="o">=</span> <span class="s1">&#39;x-access-token&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// authenticate user credentials in exchange for an access token</span>
+</span><span class='line'><span class="nx">app</span><span class="p">.</span><span class="nx">post</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">next</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">key</span> <span class="o">=</span> <span class="nx">req</span><span class="p">.</span><span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;token key&#39;</span><span class="p">)</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">age</span> <span class="o">=</span> <span class="nx">req</span><span class="p">.</span><span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;token age&#39;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nx">User</span><span class="p">.</span><span class="nx">authenticate</span><span class="p">(</span><span class="nx">req</span><span class="p">.</span><span class="nx">body</span><span class="p">.</span><span class="nx">email</span><span class="p">,</span> <span class="nx">req</span><span class="p">.</span><span class="nx">body</span><span class="p">.</span><span class="nx">password</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">id</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="k">if</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span> <span class="k">return</span> <span class="nx">next</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">}</span>
+</span><span class='line'>      <span class="k">if</span> <span class="p">(</span><span class="nx">id</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>          <span class="kd">var</span> <span class="nx">token</span> <span class="o">=</span> <span class="nx">generateToken</span><span class="p">(</span><span class="nx">id</span><span class="p">,</span> <span class="nb">Date</span><span class="p">.</span><span class="nx">now</span><span class="p">()</span> <span class="o">+</span> <span class="nx">age</span><span class="p">,</span> <span class="nx">key</span><span class="p">)</span>
+</span><span class='line'>          <span class="nx">req</span><span class="p">.</span><span class="nx">log</span><span class="p">.</span><span class="nx">info</span><span class="p">(</span><span class="s1">&#39;token generated for %s&#39;</span><span class="p">,</span> <span class="nx">req</span><span class="p">.</span><span class="nx">body</span><span class="p">.</span><span class="nx">email</span><span class="p">)</span>
+</span><span class='line'>          <span class="nx">res</span><span class="p">.</span><span class="nx">set</span><span class="p">(</span><span class="nx">TOKEN_HEADER</span><span class="p">,</span> <span class="nx">token</span><span class="p">)</span>
+</span><span class='line'>          <span class="nx">res</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="mi">204</span><span class="p">)</span>
+</span><span class='line'>      <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>          <span class="nx">res</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="mi">401</span><span class="p">)</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>  <span class="p">})</span>
+</span><span class='line'><span class="p">})</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// validate signed access token included in request header</span>
+</span><span class='line'><span class="c1">// TODO improve logging for fail2ban processing</span>
+</span><span class='line'><span class="nx">app</span><span class="p">.</span><span class="nx">validate</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">next</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">token</span> <span class="o">=</span> <span class="nx">req</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="nx">TOKEN_HEADER</span><span class="p">)</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">key</span> <span class="o">=</span> <span class="nx">req</span><span class="p">.</span><span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;token key&#39;</span><span class="p">)</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">age</span> <span class="o">=</span> <span class="nx">req</span><span class="p">.</span><span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;token age&#39;</span><span class="p">)</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">contents</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="nx">token</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nx">contents</span> <span class="o">=</span> <span class="nx">token</span><span class="p">.</span><span class="nx">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)</span>
+</span><span class='line'>      <span class="k">if</span> <span class="p">(</span><span class="nx">contents</span><span class="p">.</span><span class="nx">length</span> <span class="o">!==</span> <span class="mi">3</span><span class="p">)</span> <span class="p">{</span> <span class="k">return</span> <span class="nx">res</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="mi">401</span><span class="p">)</span> <span class="p">}</span>
+</span><span class='line'>      <span class="nx">User</span><span class="p">.</span><span class="nx">findById</span><span class="p">(</span><span class="nx">contents</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">user</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>          <span class="k">if</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span> <span class="k">return</span> <span class="nx">next</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">}</span>
+</span><span class='line'>          <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">user</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>              <span class="nx">req</span><span class="p">.</span><span class="nx">log</span><span class="p">.</span><span class="nx">warning</span><span class="p">(</span><span class="s1">&#39;token received with invalid user id: %s&#39;</span><span class="p">,</span> <span class="nx">contents</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+</span><span class='line'>              <span class="nx">res</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="mi">401</span><span class="p">)</span>
+</span><span class='line'>          <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">validTimestamp</span><span class="p">(</span><span class="nx">contents</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span> <span class="p">{</span>
+</span><span class='line'>              <span class="nx">req</span><span class="p">.</span><span class="nx">log</span><span class="p">.</span><span class="nx">debug</span><span class="p">(</span><span class="s1">&#39;token received with expired timestamp&#39;</span><span class="p">)</span>
+</span><span class='line'>              <span class="nx">res</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="mi">401</span><span class="p">)</span>
+</span><span class='line'>          <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">validSignature</span><span class="p">(</span><span class="nx">contents</span><span class="p">))</span> <span class="p">{</span>
+</span><span class='line'>              <span class="nx">req</span><span class="p">.</span><span class="nx">log</span><span class="p">.</span><span class="nx">warning</span><span class="p">(</span><span class="s1">&#39;token received with invalid signature: %s&#39;</span><span class="p">,</span> <span class="nx">token</span><span class="p">)</span>
+</span><span class='line'>              <span class="nx">res</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="mi">401</span><span class="p">)</span>
+</span><span class='line'>          <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>              <span class="nx">req</span><span class="p">.</span><span class="nx">user</span> <span class="o">=</span> <span class="nx">user</span>
+</span><span class='line'>              <span class="nx">res</span><span class="p">.</span><span class="nx">set</span><span class="p">(</span><span class="nx">TOKEN_HEADER</span><span class="p">,</span> <span class="nx">generateToken</span><span class="p">(</span><span class="nx">user</span><span class="p">.</span><span class="nx">id</span><span class="p">,</span> <span class="nb">Date</span><span class="p">.</span><span class="nx">now</span><span class="p">()</span> <span class="o">+</span> <span class="nx">age</span><span class="p">,</span> <span class="nx">key</span><span class="p">))</span>
+</span><span class='line'>              <span class="nx">next</span><span class="p">()</span>
+</span><span class='line'>          <span class="p">}</span>
+</span><span class='line'>      <span class="p">})</span>
+</span><span class='line'>  <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nx">req</span><span class="p">.</span><span class="nx">log</span><span class="p">.</span><span class="nx">warning</span><span class="p">(</span><span class="s1">&#39;token not received for %s&#39;</span><span class="p">,</span> <span class="nx">req</span><span class="p">.</span><span class="nx">originalUrl</span><span class="p">)</span>
+</span><span class='line'>      <span class="nx">res</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="mi">401</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="kd">function</span> <span class="nx">validTimestamp</span><span class="p">(</span><span class="nx">timestamp</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="k">return</span> <span class="nx">timestamp</span> <span class="o">-</span> <span class="nb">Date</span><span class="p">.</span><span class="nx">now</span><span class="p">()</span> <span class="o">&gt;=</span> <span class="mi">0</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="kd">function</span> <span class="nx">validSignature</span><span class="p">(</span><span class="nx">contents</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="k">return</span> <span class="nx">generateToken</span><span class="p">(</span><span class="nx">contents</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nx">contents</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="nx">key</span><span class="p">)</span>  <span class="o">===</span> <span class="nx">contents</span><span class="p">.</span><span class="nx">join</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// generate signed access token with user id and timestamp</span>
+</span><span class='line'><span class="kd">function</span> <span class="nx">generateToken</span><span class="p">(</span><span class="nx">id</span><span class="p">,</span> <span class="nx">timestamp</span><span class="p">,</span> <span class="nx">key</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">content</span> <span class="o">=</span> <span class="nx">id</span> <span class="o">+</span> <span class="s1">&#39;:&#39;</span> <span class="o">+</span> <span class="nx">timestamp</span>
+</span><span class='line'>  <span class="k">return</span> <span class="nx">content</span> <span class="o">+</span> <span class="s1">&#39;:&#39;</span> <span class="o">+</span> <span class="nx">crypto</span>
+</span><span class='line'>  <span class="p">.</span><span class="nx">createHmac</span><span class="p">(</span><span class="s1">&#39;sha256&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">Buffer</span><span class="p">(</span><span class="nx">key</span><span class="p">,</span> <span class="s1">&#39;base64&#39;</span><span class="p">))</span>
+</span><span class='line'>  <span class="p">.</span><span class="nx">update</span><span class="p">(</span><span class="nx">content</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">.</span><span class="nx">digest</span><span class="p">(</span><span class="s1">&#39;base64&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">module</span><span class="p">.</span><span class="nx">exports</span> <span class="o">=</span> <span class="nx">app</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The file, <em>user.js</em>, implements the <code>User</code> model that defines the
+<code>authenticate</code> method used by the <code>/api/token</code> endpoint. A user&rsquo;s email address
+and plaintext password submitted to the endpoint is checked against the salted
+hash stored within the database. A partial implementation of the <code>User</code> model
+is shown below highlighting the salted password hashing:</p>
+
+<figure class='code'><figcaption><span>user.js </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">var</span> <span class="nx">mongoose</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;mongoose&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">crypto</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;crypto&#39;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="kd">var</span> <span class="nx">SALTLEN</span> <span class="o">=</span> <span class="mi">32</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">KEYLEN</span> <span class="o">=</span> <span class="mi">512</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">ITERATIONS</span> <span class="o">=</span> <span class="mi">10000</span>
+</span><span class='line'>
+</span><span class='line'><span class="kd">var</span> <span class="nx">schema</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">mongoose</span><span class="p">.</span><span class="nx">Schema</span><span class="p">({</span>
+</span><span class='line'>  <span class="nx">hash</span><span class="o">:</span> <span class="p">{</span> <span class="nx">type</span><span class="o">:</span> <span class="nb">String</span><span class="p">,</span> <span class="nx">required</span><span class="o">:</span> <span class="kc">true</span> <span class="p">},</span>
+</span><span class='line'>  <span class="nx">salt</span><span class="o">:</span> <span class="p">{</span> <span class="nx">type</span><span class="o">:</span> <span class="nb">String</span><span class="p">,</span> <span class="nx">required</span><span class="o">:</span> <span class="kc">true</span> <span class="p">},</span>
+</span><span class='line'>  <span class="p">...</span>
+</span><span class='line'><span class="p">})</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">schema</span><span class="p">.</span><span class="nx">methods</span><span class="p">.</span><span class="nx">setPassword</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">plaintext</span><span class="p">,</span> <span class="nx">callback</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">self</span> <span class="o">=</span> <span class="k">this</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nx">crypto</span><span class="p">.</span><span class="nx">randomBytes</span><span class="p">(</span><span class="nx">SALTLEN</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">buf</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="k">if</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="nx">callback</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span>
+</span><span class='line'>      <span class="kd">var</span> <span class="nx">salt</span> <span class="o">=</span> <span class="nx">buf</span><span class="p">.</span><span class="nx">toString</span><span class="p">(</span><span class="s1">&#39;base64&#39;</span><span class="p">)</span>
+</span><span class='line'>      <span class="nx">crypto</span><span class="p">.</span><span class="nx">pbkdf2</span><span class="p">(</span><span class="nx">plaintext</span><span class="p">,</span> <span class="nx">salt</span><span class="p">,</span> <span class="nx">ITERATIONS</span><span class="p">,</span> <span class="nx">KEYLEN</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">key</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>          <span class="k">if</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="nx">callback</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span>
+</span><span class='line'>          <span class="nx">self</span><span class="p">.</span><span class="nx">salt</span> <span class="o">=</span> <span class="nx">salt</span>
+</span><span class='line'>          <span class="nx">self</span><span class="p">.</span><span class="nx">hash</span> <span class="o">=</span> <span class="nx">key</span><span class="p">.</span><span class="nx">toString</span><span class="p">(</span><span class="s1">&#39;base64&#39;</span><span class="p">)</span>
+</span><span class='line'>          <span class="nx">callback</span><span class="p">()</span>
+</span><span class='line'>      <span class="p">})</span>
+</span><span class='line'>  <span class="p">})</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">schema</span><span class="p">.</span><span class="nx">statics</span><span class="p">.</span><span class="nx">authenticate</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">email</span><span class="p">,</span> <span class="nx">plaintext</span><span class="p">,</span> <span class="nx">callback</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="k">this</span><span class="p">.</span><span class="nx">findByEmail</span><span class="p">(</span><span class="nx">email</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">user</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="k">if</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span> <span class="k">return</span> <span class="nx">callback</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="kc">null</span><span class="p">)</span> <span class="p">}</span>
+</span><span class='line'>      <span class="k">if</span> <span class="p">(</span><span class="nx">user</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>          <span class="nx">crypto</span><span class="p">.</span><span class="nx">pbkdf2</span><span class="p">(</span><span class="nx">plaintext</span><span class="p">,</span> <span class="nx">user</span><span class="p">.</span><span class="nx">salt</span><span class="p">,</span> <span class="nx">ITERATIONS</span><span class="p">,</span> <span class="nx">KEYLEN</span><span class="p">,</span> <span class="nx">onComplete</span><span class="p">)</span>
+</span><span class='line'>      <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>          <span class="nx">callback</span><span class="p">(</span><span class="kc">null</span><span class="p">,</span> <span class="kc">null</span><span class="p">)</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="kd">function</span> <span class="nx">onComplete</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">key</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>          <span class="k">if</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="nx">callback</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="kc">null</span><span class="p">)</span>
+</span><span class='line'>          <span class="k">if</span> <span class="p">(</span><span class="nx">user</span><span class="p">.</span><span class="nx">hash</span> <span class="o">===</span> <span class="nx">key</span><span class="p">.</span><span class="nx">toString</span><span class="p">(</span><span class="s1">&#39;base64&#39;</span><span class="p">))</span> <span class="p">{</span>
+</span><span class='line'>              <span class="nx">callback</span><span class="p">(</span><span class="kc">null</span><span class="p">,</span> <span class="nx">user</span><span class="p">.</span><span class="nx">id</span><span class="p">)</span>
+</span><span class='line'>          <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>              <span class="nx">callback</span><span class="p">(</span><span class="kc">null</span><span class="p">,</span> <span class="kc">null</span><span class="p">)</span>
+</span><span class='line'>          <span class="p">}</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>  <span class="p">})</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">module</span><span class="p">.</span><span class="nx">exports</span> <span class="o">=</span> <span class="nx">mongoose</span><span class="p">.</span><span class="nx">model</span><span class="p">(</span><span class="s1">&#39;User&#39;</span><span class="p">,</span> <span class="nx">schema</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>All three resource types follow a similar implementation pattern. Endpoints are
+defined and exported as an Express application. The <code>validate</code> middleware is
+looked up and used to authenticate requests (in the context of the task
+resource shown below, all endpoints are authenticated). In support for the
+offline mobile use case, new resources are created with a <code>PUT</code> request based
+on a globally unique identifer created by a client. Additionally, the
+<code>If-Unmodified-Since</code> conditional header is used to detect potential conflicts
+that would arise from use by multiple clients (e.g. mobile and web). Finally,
+the <code>PATCH</code> method is implemented using JSON Patch (<a href="http://mongodb.org">RPC 6902</a>) to optimize
+client requests to modify a resource.</p>
+
+<p>The <em>tasks.js</em> file below is representative of the implementation approach for
+all resource endpoints:</p>
+
+<figure class='code'><figcaption><span>tasks.js </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+<span class='line-number'>76</span>
+<span class='line-number'>77</span>
+<span class='line-number'>78</span>
+<span class='line-number'>79</span>
+<span class='line-number'>80</span>
+<span class='line-number'>81</span>
+<span class='line-number'>82</span>
+<span class='line-number'>83</span>
+<span class='line-number'>84</span>
+<span class='line-number'>85</span>
+<span class='line-number'>86</span>
+<span class='line-number'>87</span>
+<span class='line-number'>88</span>
+<span class='line-number'>89</span>
+<span class='line-number'>90</span>
+<span class='line-number'>91</span>
+<span class='line-number'>92</span>
+<span class='line-number'>93</span>
+<span class='line-number'>94</span>
+<span class='line-number'>95</span>
+<span class='line-number'>96</span>
+<span class='line-number'>97</span>
+<span class='line-number'>98</span>
+<span class='line-number'>99</span>
+<span class='line-number'>100</span>
+<span class='line-number'>101</span>
+<span class='line-number'>102</span>
+<span class='line-number'>103</span>
+<span class='line-number'>104</span>
+<span class='line-number'>105</span>
+<span class='line-number'>106</span>
+<span class='line-number'>107</span>
+<span class='line-number'>108</span>
+<span class='line-number'>109</span>
+<span class='line-number'>110</span>
+<span class='line-number'>111</span>
+<span class='line-number'>112</span>
+<span class='line-number'>113</span>
+<span class='line-number'>114</span>
+<span class='line-number'>115</span>
+<span class='line-number'>116</span>
+<span class='line-number'>117</span>
+<span class='line-number'>118</span>
+<span class='line-number'>119</span>
+<span class='line-number'>120</span>
+<span class='line-number'>121</span>
+<span class='line-number'>122</span>
+<span class='line-number'>123</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">var</span> <span class="nx">app</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;express&#39;</span><span class="p">)()</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">jsonpatch</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;json-patch&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">Task</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;./models/task&#39;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// validate all requests have an access token</span>
+</span><span class='line'><span class="nx">app</span><span class="p">.</span><span class="nx">all</span><span class="p">(</span><span class="s1">&#39;*&#39;</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">next</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">validate</span> <span class="o">=</span> <span class="nx">req</span><span class="p">.</span><span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;validate&#39;</span><span class="p">)</span>
+</span><span class='line'>  <span class="nx">validate</span><span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">next</span><span class="p">)</span>
+</span><span class='line'><span class="p">})</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// return all incomplete tasks for a user</span>
+</span><span class='line'><span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">next</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">modifiedSince</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="nx">req</span><span class="p">.</span><span class="nx">query</span><span class="p">[</span><span class="s1">&#39;modified-since&#39;</span><span class="p">])</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nx">modifiedSince</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">Date</span><span class="p">(</span><span class="nx">req</span><span class="p">.</span><span class="nx">query</span><span class="p">[</span><span class="s1">&#39;modified-since&#39;</span><span class="p">])</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// return incomplete tasks modified since the specified date</span>
+</span><span class='line'>  <span class="nx">Task</span><span class="p">.</span><span class="nx">findByIncomplete</span><span class="p">(</span><span class="nx">req</span><span class="p">.</span><span class="nx">user</span><span class="p">,</span> <span class="nx">modifiedSince</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">tasks</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="k">if</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span> <span class="k">return</span> <span class="nx">next</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">}</span>
+</span><span class='line'>      <span class="nx">res</span><span class="p">.</span><span class="nx">json</span><span class="p">(</span><span class="nx">tasks</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">})</span>
+</span><span class='line'><span class="p">})</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// lookup a task based on the id within the uri</span>
+</span><span class='line'><span class="nx">app</span><span class="p">.</span><span class="nx">param</span><span class="p">(</span><span class="s1">&#39;id&#39;</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">next</span><span class="p">,</span> <span class="nx">id</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">Task</span><span class="p">.</span><span class="nx">findById</span><span class="p">(</span><span class="nx">id</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">task</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="k">if</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span> <span class="k">return</span> <span class="nx">next</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">}</span>
+</span><span class='line'>      <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">task</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>          <span class="k">if</span> <span class="p">(</span><span class="nx">req</span><span class="p">.</span><span class="nx">method</span> <span class="o">===</span> <span class="s1">&#39;PUT&#39;</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>              <span class="nx">next</span><span class="p">()</span>
+</span><span class='line'>          <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>              <span class="nx">res</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="mi">404</span><span class="p">)</span>
+</span><span class='line'>          <span class="p">}</span>
+</span><span class='line'>      <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>          <span class="c1">// check that the requesting user is authorized</span>
+</span><span class='line'>          <span class="k">if</span> <span class="p">(</span><span class="nx">task</span><span class="p">.</span><span class="nx">user</span><span class="p">.</span><span class="nx">equals</span><span class="p">(</span><span class="nx">req</span><span class="p">.</span><span class="nx">user</span><span class="p">.</span><span class="nx">id</span><span class="p">))</span> <span class="p">{</span>
+</span><span class='line'>              <span class="nx">req</span><span class="p">.</span><span class="nx">task</span> <span class="o">=</span> <span class="nx">task</span>
+</span><span class='line'>              <span class="nx">next</span><span class="p">()</span>
+</span><span class='line'>          <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>              <span class="nx">res</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="mi">403</span><span class="p">)</span>
+</span><span class='line'>          <span class="p">}</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>  <span class="p">})</span>
+</span><span class='line'><span class="p">})</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// return the task with the specified id</span>
+</span><span class='line'><span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;/:id&#39;</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">res</span><span class="p">.</span><span class="nx">json</span><span class="p">(</span><span class="nx">req</span><span class="p">.</span><span class="nx">task</span><span class="p">)</span>
+</span><span class='line'><span class="p">})</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// create or replace a task with the specified id</span>
+</span><span class='line'><span class="nx">app</span><span class="p">.</span><span class="nx">put</span><span class="p">(</span><span class="s1">&#39;/:id&#39;</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">next</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">unmodifiedSince</span> <span class="o">=</span> <span class="nx">req</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;if-unmodified-since&#39;</span><span class="p">)</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="c1">// create new task</span>
+</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">req</span><span class="p">.</span><span class="nx">task</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="k">if</span> <span class="p">(</span><span class="nx">unmodifiedSince</span><span class="p">)</span> <span class="p">{</span> <span class="k">return</span> <span class="nx">res</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="mi">404</span><span class="p">)</span> <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="nx">req</span><span class="p">.</span><span class="nx">body</span><span class="p">.</span><span class="nx">_id</span> <span class="o">=</span> <span class="nx">req</span><span class="p">.</span><span class="nx">params</span><span class="p">.</span><span class="nx">id</span>
+</span><span class='line'>      <span class="nx">req</span><span class="p">.</span><span class="nx">body</span><span class="p">.</span><span class="nx">user</span> <span class="o">=</span> <span class="nx">req</span><span class="p">.</span><span class="nx">user</span><span class="p">.</span><span class="nx">id</span>
+</span><span class='line'>      <span class="nx">req</span><span class="p">.</span><span class="nx">body</span><span class="p">.</span><span class="nx">modified</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">Date</span><span class="p">()</span>
+</span><span class='line'>      <span class="nx">Task</span><span class="p">.</span><span class="nx">create</span><span class="p">(</span><span class="nx">req</span><span class="p">.</span><span class="nx">body</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>          <span class="k">if</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span> <span class="k">return</span> <span class="nx">res</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="mi">400</span><span class="p">)</span> <span class="p">}</span>
+</span><span class='line'>          <span class="nx">res</span><span class="p">.</span><span class="nx">status</span><span class="p">(</span><span class="mi">201</span><span class="p">)</span>
+</span><span class='line'>          <span class="p">.</span><span class="nx">set</span><span class="p">(</span><span class="s1">&#39;last-modified&#39;</span><span class="p">,</span> <span class="nx">req</span><span class="p">.</span><span class="nx">body</span><span class="p">.</span><span class="nx">modified</span><span class="p">)</span>
+</span><span class='line'>          <span class="p">.</span><span class="nx">send</span><span class="p">()</span>
+</span><span class='line'>      <span class="p">})</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="c1">// update existing task if conditional is provided</span>
+</span><span class='line'>  <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>      <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">unmodifiedSince</span><span class="p">)</span> <span class="p">{</span> <span class="k">return</span> <span class="nx">res</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="mi">428</span><span class="p">)</span> <span class="p">}</span>
+</span><span class='line'>      <span class="k">if</span> <span class="p">(</span><span class="nx">isModified</span><span class="p">(</span><span class="nx">req</span><span class="p">.</span><span class="nx">task</span><span class="p">,</span> <span class="nx">unmodifiedSince</span><span class="p">))</span> <span class="p">{</span> <span class="k">return</span> <span class="nx">res</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="mi">412</span><span class="p">)</span> <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="kd">var</span> <span class="nx">task</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Task</span><span class="p">(</span><span class="nx">req</span><span class="p">.</span><span class="nx">body</span><span class="p">)</span>
+</span><span class='line'>      <span class="nx">task</span><span class="p">.</span><span class="nx">validate</span><span class="p">(</span><span class="kd">function</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>          <span class="k">if</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span> <span class="k">return</span> <span class="nx">res</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="mi">400</span><span class="p">)</span> <span class="p">}</span>
+</span><span class='line'>          <span class="k">delete</span> <span class="nx">req</span><span class="p">.</span><span class="nx">body</span><span class="p">.</span><span class="nx">_id</span>
+</span><span class='line'>          <span class="k">delete</span> <span class="nx">req</span><span class="p">.</span><span class="nx">body</span><span class="p">.</span><span class="nx">user</span>
+</span><span class='line'>          <span class="nx">req</span><span class="p">.</span><span class="nx">body</span><span class="p">.</span><span class="nx">modified</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">Date</span><span class="p">()</span>
+</span><span class='line'>          <span class="nx">Task</span><span class="p">.</span><span class="nx">update</span><span class="p">({</span> <span class="nx">_id</span><span class="o">:</span> <span class="nx">req</span><span class="p">.</span><span class="nx">task</span><span class="p">.</span><span class="nx">id</span> <span class="p">},</span> <span class="nx">req</span><span class="p">.</span><span class="nx">body</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>              <span class="k">if</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span> <span class="k">return</span> <span class="nx">next</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">}</span>
+</span><span class='line'>              <span class="nx">res</span><span class="p">.</span><span class="nx">status</span><span class="p">(</span><span class="mi">204</span><span class="p">)</span>
+</span><span class='line'>              <span class="p">.</span><span class="nx">set</span><span class="p">(</span><span class="s1">&#39;last-modified&#39;</span><span class="p">,</span> <span class="nx">req</span><span class="p">.</span><span class="nx">body</span><span class="p">.</span><span class="nx">modified</span><span class="p">)</span>
+</span><span class='line'>              <span class="p">.</span><span class="nx">send</span><span class="p">()</span>
+</span><span class='line'>          <span class="p">})</span>
+</span><span class='line'>      <span class="p">})</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">})</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// update a task with partial JSON data based on RFC 6902</span>
+</span><span class='line'><span class="nx">app</span><span class="p">.</span><span class="nx">patch</span><span class="p">(</span><span class="s1">&#39;/:id&#39;</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">,</span> <span class="nx">next</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">unmodifiedSince</span> <span class="o">=</span> <span class="nx">req</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;if-unmodified-since&#39;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">req</span><span class="p">.</span><span class="nx">is</span><span class="p">(</span><span class="s1">&#39;application/json-patch+json&#39;</span><span class="p">))</span> <span class="p">{</span>
+</span><span class='line'>      <span class="k">return</span> <span class="nx">res</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="mi">415</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">unmodifiedSince</span><span class="p">)</span> <span class="p">{</span> <span class="k">return</span> <span class="nx">res</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="mi">428</span><span class="p">)</span> <span class="p">}</span>
+</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="nx">isModified</span><span class="p">(</span><span class="nx">req</span><span class="p">.</span><span class="nx">task</span><span class="p">,</span> <span class="nx">unmodifiedSince</span><span class="p">))</span> <span class="p">{</span> <span class="k">return</span> <span class="nx">res</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="mi">412</span><span class="p">)</span> <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">try</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nx">jsonpatch</span><span class="p">.</span><span class="nx">apply</span><span class="p">(</span><span class="nx">req</span><span class="p">.</span><span class="nx">task</span><span class="p">,</span> <span class="nx">req</span><span class="p">.</span><span class="nx">body</span><span class="p">)</span>
+</span><span class='line'>      <span class="nx">req</span><span class="p">.</span><span class="nx">task</span><span class="p">.</span><span class="nx">modified</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">Date</span><span class="p">()</span>
+</span><span class='line'>      <span class="nx">req</span><span class="p">.</span><span class="nx">task</span><span class="p">.</span><span class="nx">save</span><span class="p">(</span><span class="kd">function</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>          <span class="k">if</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span> <span class="k">return</span> <span class="nx">next</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">}</span>
+</span><span class='line'>          <span class="nx">res</span><span class="p">.</span><span class="nx">status</span><span class="p">(</span><span class="mi">204</span><span class="p">)</span>
+</span><span class='line'>          <span class="p">.</span><span class="nx">set</span><span class="p">(</span><span class="s1">&#39;last-modified&#39;</span><span class="p">,</span> <span class="nx">req</span><span class="p">.</span><span class="nx">task</span><span class="p">.</span><span class="nx">modified</span><span class="p">)</span>
+</span><span class='line'>          <span class="p">.</span><span class="nx">send</span><span class="p">()</span>
+</span><span class='line'>      <span class="p">})</span>
+</span><span class='line'>  <span class="p">}</span> <span class="k">catch</span> <span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nx">res</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="mi">400</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">})</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// compare dates stripping milliseconds </span>
+</span><span class='line'><span class="kd">function</span> <span class="nx">isModified</span><span class="p">(</span><span class="nx">task</span><span class="p">,</span> <span class="nx">unmodifiedSince</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">modified</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">Date</span><span class="p">(</span><span class="nx">task</span><span class="p">.</span><span class="nx">modified</span><span class="p">).</span><span class="nx">setMilliseconds</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">return</span> <span class="nx">modified</span> <span class="o">&gt;</span> <span class="k">new</span> <span class="nb">Date</span><span class="p">(</span><span class="nx">unmodifiedSince</span><span class="p">)</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">module</span><span class="p">.</span><span class="nx">exports</span> <span class="o">=</span> <span class="nx">app</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>After the implementation of all resource endpoints, it was clear that much of
+the logic could be abstracted if time had permitted. Ideally, I would have been
+interested in exploring a declarative approach to endpoints with a more robust framework for supporting data syncronization across clients.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[4dashes - the Build System]]></title>
