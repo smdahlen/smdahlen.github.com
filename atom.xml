@@ -4,7 +4,7 @@
   <title><![CDATA[Shawn Dahlen]]></title>
   <link href="http://smdahlen.github.com/atom.xml" rel="self"/>
   <link href="http://smdahlen.github.com/"/>
-  <updated>2014-03-17T16:37:17-04:00</updated>
+  <updated>2014-03-20T11:55:50-04:00</updated>
   <id>http://smdahlen.github.com/</id>
   <author>
     <name><![CDATA[Shawn Dahlen]]></name>
@@ -12,6 +12,791 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[4dashes - the Web Client, Part 1]]></title>
+    <link href="http://smdahlen.github.com/blog/2014/03/19/4dashes-the-web-client-part-1/"/>
+    <updated>2014-03-19T14:28:37-04:00</updated>
+    <id>http://smdahlen.github.com/blog/2014/03/19/4dashes-the-web-client-part-1</id>
+    <content type="html"><![CDATA[<p>This is the third in a series of posts discussing the implementation of the
+<a href="https://4dashes.com">4dashes</a> productivity tool. It covers the web services communication and
+implementation of business logic within the <a href="http://angularjs.org">Angular-based</a> web application.
+The post assumes the reader has a basic understanding of the Angular framework.</p>
+
+<!-- more -->
+
+
+<h2>Understanding Angular</h2>
+
+<p>After a few months of using Angular to build 4dashes, it became
+clear that Angular was a library for building a tailor-made framework
+for your application. Consequently, there was more than
+one way to implement a solution and guidance was marginal at best. At first
+this was a struggle, but as I better understood the core concepts behind
+Angular I crafted a set of guidelines that shaped my implementation and should
+prove useful for new developers.</p>
+
+<p>The big realization was that Angular, at its core, is a DOM compiler.
+What I mean by that is it provides the mechanics to extend the HTML language
+into your domain through custom elements and attributes. The net result is
+declarative markup that represents a higher level abstraction of the interfaces
+and their associated behavior in your application. This is paired with a
+two-way data binding mechanism in which changes to your data model are
+reflected in the DOM and vice-versa. In tandem with the DOM compiler and
+two-way data binding, Angular provides a simple mechanism for dependency
+injection. This enables us to structure our code into testable units that
+depend upon one another with dependencies instantiated and resolved at runtime.
+A set of primitives common to web applications is built on top of these
+concepts and provided by the library.</p>
+
+<h2>Communicating with the API</h2>
+
+<p>Lets begin with the implementation responsible for communicating with the
+server-side API discussed in the <a href="http://shawn.dahlen.me/blog/2014/03/17/4dashes-the-api/">previous post</a>. To keep it simple, I
+started with Angular&rsquo;s <code>$http</code> service. This quickly grew into a custom
+<code>resource</code> service resembling the optional <code>$resource</code> service provided by the
+Angular team. I treaded down this path for two reasons: 1) support for PATCH
+requests with automatic change tracking (similar to <a href="http://backbonejs.org/#Model-save">Backbone</a>), and 2)
+support for offline use with data synchronization.</p>
+
+<p>Unfortunately, time did not permit a clean implementation of either requirement
+but I proceeded with my custom service anyway (if there is interest, I can
+expand on the issues I ran into). As you will see below, the implementation was
+small and straightforward while providing me a great understanding of Angular&rsquo;s
+<code>$http</code> service and <em>promises</em> implementation.</p>
+
+<p>The implementation aligned with my creation and update semantics (e.g.
+conditional updates, creation with <code>PUT</code>), cached results for subsequent
+fetches, transformed RFC8601 strings into dates, and provided an initialization
+hook to modify the resource instance on creation.</p>
+
+<figure class='code'><figcaption><span>app/components/api/api.js </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+<span class='line-number'>76</span>
+<span class='line-number'>77</span>
+<span class='line-number'>78</span>
+<span class='line-number'>79</span>
+<span class='line-number'>80</span>
+<span class='line-number'>81</span>
+<span class='line-number'>82</span>
+<span class='line-number'>83</span>
+<span class='line-number'>84</span>
+<span class='line-number'>85</span>
+<span class='line-number'>86</span>
+<span class='line-number'>87</span>
+<span class='line-number'>88</span>
+<span class='line-number'>89</span>
+<span class='line-number'>90</span>
+<span class='line-number'>91</span>
+<span class='line-number'>92</span>
+<span class='line-number'>93</span>
+<span class='line-number'>94</span>
+<span class='line-number'>95</span>
+<span class='line-number'>96</span>
+<span class='line-number'>97</span>
+<span class='line-number'>98</span>
+<span class='line-number'>99</span>
+<span class='line-number'>100</span>
+<span class='line-number'>101</span>
+<span class='line-number'>102</span>
+<span class='line-number'>103</span>
+<span class='line-number'>104</span>
+<span class='line-number'>105</span>
+<span class='line-number'>106</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="nx">angular</span><span class="p">.</span><span class="nx">module</span><span class="p">(</span><span class="s1">&#39;api&#39;</span><span class="p">,</span> <span class="p">[])</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">.</span><span class="nx">factory</span><span class="p">(</span><span class="s1">&#39;resource&#39;</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">$http</span><span class="p">,</span> <span class="nx">$q</span><span class="p">,</span> <span class="nx">$cacheFactory</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="k">return</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">template</span><span class="p">,</span> <span class="nx">defaultParams</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="kd">var</span> <span class="nx">cache</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="nx">template</span> <span class="o">=</span> <span class="nx">urltemplate</span><span class="p">.</span><span class="nx">parse</span><span class="p">(</span><span class="nx">template</span><span class="p">)</span>
+</span><span class='line'>      <span class="nx">cache</span> <span class="o">=</span> <span class="nx">$cacheFactory</span><span class="p">(</span><span class="nx">template</span><span class="p">.</span><span class="nx">expand</span><span class="p">({}))</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="kd">function</span> <span class="nx">Resource</span><span class="p">(</span><span class="nx">data</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>          <span class="kd">var</span> <span class="nx">self</span> <span class="o">=</span> <span class="k">this</span>
+</span><span class='line'>          <span class="kd">var</span> <span class="nx">regex</span> <span class="o">=</span> <span class="sr">/^(\d{4}|\+\d{6})(?:-(\d{2})(?:-(\d{2})(?:T(\d{2}):(\d{2}):(\d{2})\.(\d{1,})(Z|([\-+])(\d{2}):(\d{2}))?)?)?)?$/</span>
+</span><span class='line'>          <span class="kd">var</span> <span class="nx">match</span>
+</span><span class='line'>
+</span><span class='line'>          <span class="k">if</span> <span class="p">(</span><span class="nx">angular</span><span class="p">.</span><span class="nx">isFunction</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">initialize</span><span class="p">))</span> <span class="p">{</span>
+</span><span class='line'>              <span class="k">this</span><span class="p">.</span><span class="nx">initialize</span><span class="p">()</span>
+</span><span class='line'>          <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>          <span class="nx">angular</span><span class="p">.</span><span class="nx">extend</span><span class="p">(</span><span class="nx">self</span><span class="p">,</span> <span class="nx">data</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>          <span class="nx">angular</span><span class="p">.</span><span class="nx">forEach</span><span class="p">(</span><span class="nx">self</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">value</span><span class="p">,</span> <span class="nx">key</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>              <span class="c1">// transform iso 8601 strings into date objects</span>
+</span><span class='line'>              <span class="k">if</span> <span class="p">(</span><span class="nx">angular</span><span class="p">.</span><span class="nx">isString</span><span class="p">(</span><span class="nx">value</span><span class="p">))</span> <span class="p">{</span>
+</span><span class='line'>                  <span class="nx">match</span> <span class="o">=</span> <span class="nx">regex</span><span class="p">.</span><span class="nx">exec</span><span class="p">(</span><span class="nx">value</span><span class="p">)</span>
+</span><span class='line'>                  <span class="k">if</span> <span class="p">(</span><span class="nx">match</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>                      <span class="nx">self</span><span class="p">[</span><span class="nx">key</span><span class="p">]</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">Date</span><span class="p">(</span><span class="nb">Date</span><span class="p">.</span><span class="nx">parse</span><span class="p">(</span><span class="nx">match</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+</span><span class='line'>                  <span class="p">}</span>
+</span><span class='line'>              <span class="p">}</span>
+</span><span class='line'>          <span class="p">})</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="nx">Resource</span><span class="p">.</span><span class="nx">create</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">resource</span><span class="p">,</span> <span class="nx">params</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>          <span class="kd">var</span> <span class="nx">url</span> <span class="o">=</span> <span class="nx">Resource</span><span class="p">.</span><span class="nx">url</span><span class="p">(</span><span class="nx">params</span><span class="p">,</span> <span class="nx">resource</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>          <span class="k">return</span> <span class="nx">$http</span><span class="p">({</span>
+</span><span class='line'>              <span class="nx">method</span><span class="o">:</span> <span class="nx">template</span><span class="p">.</span><span class="nx">expand</span><span class="p">({})</span> <span class="o">===</span> <span class="nx">url</span> <span class="o">?</span> <span class="s1">&#39;POST&#39;</span> <span class="o">:</span> <span class="s1">&#39;PUT&#39;</span><span class="p">,</span>
+</span><span class='line'>              <span class="nx">url</span><span class="o">:</span> <span class="nx">url</span><span class="p">,</span>
+</span><span class='line'>              <span class="nx">data</span><span class="o">:</span> <span class="nx">resource</span>
+</span><span class='line'>          <span class="p">})</span>
+</span><span class='line'>          <span class="p">.</span><span class="nx">then</span><span class="p">(</span><span class="kd">function</span> <span class="p">(</span><span class="nx">response</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>              <span class="nx">resource</span><span class="p">.</span><span class="nx">modified</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">Date</span><span class="p">(</span><span class="nx">response</span><span class="p">.</span><span class="nx">headers</span><span class="p">(</span><span class="s1">&#39;last-modified&#39;</span><span class="p">))</span>
+</span><span class='line'>              <span class="k">return</span> <span class="nx">resource</span>
+</span><span class='line'>          <span class="p">})</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="nx">Resource</span><span class="p">.</span><span class="nx">fetch</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">params</span><span class="p">,</span> <span class="nx">fresh</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>          <span class="kd">var</span> <span class="nx">url</span> <span class="o">=</span> <span class="nx">Resource</span><span class="p">.</span><span class="nx">url</span><span class="p">(</span><span class="nx">params</span><span class="p">)</span>
+</span><span class='line'>          <span class="kd">var</span> <span class="nx">result</span>
+</span><span class='line'>
+</span><span class='line'>          <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">fresh</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>              <span class="nx">result</span> <span class="o">=</span> <span class="nx">cache</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="nx">url</span><span class="p">)</span>
+</span><span class='line'>              <span class="k">if</span> <span class="p">(</span><span class="nx">result</span><span class="p">)</span> <span class="p">{</span> <span class="k">return</span> <span class="nx">$q</span><span class="p">.</span><span class="nx">when</span><span class="p">(</span><span class="nx">result</span><span class="p">)</span> <span class="p">}</span>
+</span><span class='line'>          <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>          <span class="k">return</span> <span class="nx">$http</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="nx">url</span><span class="p">).</span><span class="nx">then</span><span class="p">(</span><span class="kd">function</span> <span class="p">(</span><span class="nx">response</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>              <span class="k">if</span> <span class="p">(</span><span class="nb">Array</span><span class="p">.</span><span class="nx">isArray</span><span class="p">(</span><span class="nx">response</span><span class="p">.</span><span class="nx">data</span><span class="p">))</span> <span class="p">{</span>
+</span><span class='line'>                  <span class="nx">result</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span class='line'>                  <span class="nx">response</span><span class="p">.</span><span class="nx">data</span><span class="p">.</span><span class="nx">forEach</span><span class="p">(</span><span class="kd">function</span> <span class="p">(</span><span class="nx">value</span><span class="p">,</span> <span class="nx">key</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>                      <span class="nx">result</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="k">new</span> <span class="nx">Resource</span><span class="p">(</span><span class="nx">value</span><span class="p">))</span>
+</span><span class='line'>                  <span class="p">})</span>
+</span><span class='line'>              <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>                  <span class="nx">result</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Resource</span><span class="p">(</span><span class="nx">response</span><span class="p">.</span><span class="nx">data</span><span class="p">)</span>
+</span><span class='line'>              <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>              <span class="nx">cache</span><span class="p">.</span><span class="nx">put</span><span class="p">(</span><span class="nx">url</span><span class="p">,</span> <span class="nx">result</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>              <span class="k">return</span> <span class="nx">result</span>
+</span><span class='line'>          <span class="p">})</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="nx">Resource</span><span class="p">.</span><span class="nx">url</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">requestParams</span><span class="p">,</span> <span class="nx">resource</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>          <span class="kd">var</span> <span class="nx">params</span> <span class="o">=</span> <span class="nx">angular</span><span class="p">.</span><span class="nx">extend</span><span class="p">({},</span> <span class="nx">defaultParams</span><span class="p">,</span> <span class="nx">requestParams</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>          <span class="nx">angular</span><span class="p">.</span><span class="nx">forEach</span><span class="p">(</span><span class="nx">params</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">value</span><span class="p">,</span> <span class="nx">key</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>              <span class="k">if</span> <span class="p">(</span><span class="nx">angular</span><span class="p">.</span><span class="nx">isFunction</span><span class="p">(</span><span class="nx">value</span><span class="p">))</span> <span class="p">{</span>
+</span><span class='line'>                  <span class="nx">params</span><span class="p">[</span><span class="nx">key</span><span class="p">]</span> <span class="o">=</span> <span class="nx">value</span><span class="p">(</span><span class="nx">resource</span><span class="p">)</span>
+</span><span class='line'>              <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">angular</span><span class="p">.</span><span class="nx">isString</span><span class="p">(</span><span class="nx">value</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="nx">value</span><span class="p">.</span><span class="nx">charAt</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">===</span> <span class="s1">&#39;@&#39;</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>                  <span class="nx">params</span><span class="p">[</span><span class="nx">key</span><span class="p">]</span> <span class="o">=</span> <span class="nx">resource</span> <span class="o">?</span> <span class="nx">resource</span><span class="p">[</span><span class="nx">value</span><span class="p">.</span><span class="nx">slice</span><span class="p">(</span><span class="mi">1</span><span class="p">)]</span> <span class="o">:</span> <span class="kc">null</span>
+</span><span class='line'>              <span class="p">}</span>
+</span><span class='line'>          <span class="p">})</span>
+</span><span class='line'>
+</span><span class='line'>          <span class="k">return</span> <span class="nx">template</span><span class="p">.</span><span class="nx">expand</span><span class="p">(</span><span class="nx">params</span><span class="p">)</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="nx">Resource</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">save</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">params</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>          <span class="kd">var</span> <span class="nx">self</span> <span class="o">=</span> <span class="k">this</span>
+</span><span class='line'>          <span class="kd">var</span> <span class="nx">url</span> <span class="o">=</span> <span class="nx">Resource</span><span class="p">.</span><span class="nx">url</span><span class="p">(</span><span class="nx">params</span><span class="p">,</span> <span class="nx">self</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>          <span class="k">return</span> <span class="nx">$http</span><span class="p">({</span>
+</span><span class='line'>              <span class="nx">method</span><span class="o">:</span> <span class="s1">&#39;PUT&#39;</span><span class="p">,</span>
+</span><span class='line'>              <span class="nx">url</span><span class="o">:</span> <span class="nx">url</span><span class="p">,</span>
+</span><span class='line'>              <span class="nx">headers</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>                  <span class="s1">&#39;content-type&#39;</span><span class="o">:</span> <span class="s1">&#39;application/json&#39;</span><span class="p">,</span>
+</span><span class='line'>                  <span class="s1">&#39;if-unmodified-since&#39;</span><span class="o">:</span> <span class="nx">self</span><span class="p">.</span><span class="nx">modified</span><span class="p">.</span><span class="nx">toString</span><span class="p">()</span>
+</span><span class='line'>              <span class="p">},</span>
+</span><span class='line'>              <span class="nx">data</span><span class="o">:</span> <span class="nx">self</span>
+</span><span class='line'>          <span class="p">})</span>
+</span><span class='line'>          <span class="p">.</span><span class="nx">then</span><span class="p">(</span><span class="kd">function</span> <span class="p">(</span><span class="nx">response</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>              <span class="nx">self</span><span class="p">.</span><span class="nx">modified</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">Date</span><span class="p">(</span><span class="nx">response</span><span class="p">.</span><span class="nx">headers</span><span class="p">(</span><span class="s1">&#39;last-modified&#39;</span><span class="p">))</span>
+</span><span class='line'>              <span class="k">return</span> <span class="nx">self</span>
+</span><span class='line'>          <span class="p">})</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="k">return</span> <span class="nx">Resource</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">})</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Similar to <code>$resource</code>, a concrete resource is defined by supplying a base URI
+and template parameters (see <a href="http://tools.ietf.org/html/rfc6570">RFC 6570: URI Templates</a>). Here is how I
+defined the concrete <code>Task</code> and <code>Summary</code> resources that communicates with
+endpoints defined in the previous post:</p>
+
+<figure class='code'><figcaption><span>app/components/api/api.js </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="p">.</span><span class="nx">factory</span><span class="p">(</span><span class="s1">&#39;Task&#39;</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">resource</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">Task</span> <span class="o">=</span> <span class="nx">resource</span> <span class="p">(</span><span class="s1">&#39;/api/tasks{/id}&#39;</span><span class="p">,</span> <span class="p">{</span> <span class="nx">id</span><span class="o">:</span> <span class="s1">&#39;@id&#39;</span> <span class="p">})</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="p">...</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">return</span> <span class="nx">Task</span>
+</span><span class='line'><span class="p">})</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">.</span><span class="nx">factory</span><span class="p">(</span><span class="s1">&#39;Summary&#39;</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">resource</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">Summary</span> <span class="o">=</span> <span class="nx">resource</span><span class="p">(</span><span class="s1">&#39;/api/summaries{/year}{/month}{/day}&#39;</span><span class="p">,</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nx">year</span><span class="o">:</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">summary</span><span class="p">)</span> <span class="p">{</span> <span class="k">return</span> <span class="nx">format</span><span class="p">(</span><span class="nx">summary</span><span class="p">,</span> <span class="s1">&#39;YYYY&#39;</span><span class="p">)</span> <span class="p">},</span>
+</span><span class='line'>      <span class="nx">month</span><span class="o">:</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">summary</span><span class="p">)</span> <span class="p">{</span> <span class="k">return</span> <span class="nx">format</span><span class="p">(</span><span class="nx">summary</span><span class="p">,</span> <span class="s1">&#39;MM&#39;</span><span class="p">)</span> <span class="p">},</span>
+</span><span class='line'>      <span class="nx">day</span><span class="o">:</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">summary</span><span class="p">)</span> <span class="p">{</span> <span class="k">return</span> <span class="nx">format</span><span class="p">(</span><span class="nx">summary</span><span class="p">,</span> <span class="s1">&#39;DD&#39;</span><span class="p">)</span> <span class="p">}</span>
+</span><span class='line'>  <span class="p">})</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="p">...</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">return</span> <span class="nx">Summary</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="kd">function</span> <span class="nx">format</span><span class="p">(</span><span class="nx">summary</span><span class="p">,</span> <span class="nx">token</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="k">return</span> <span class="nx">summary</span> <span class="o">?</span> <span class="nx">moment</span><span class="p">(</span><span class="nx">summary</span><span class="p">.</span><span class="nx">day</span><span class="p">).</span><span class="nx">format</span><span class="p">(</span><span class="nx">token</span><span class="p">)</span> <span class="o">:</span> <span class="kc">null</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">})</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This <code>Task</code> resource could now be used in the following manner:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="c1">// retrieves an array of incomplete tasks (GET /api/tasks)</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">tasks</span> <span class="o">=</span> <span class="nx">Task</span><span class="p">.</span><span class="nx">fetch</span><span class="p">()</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// modifies and saves the first task in the array (PUT /api/tasks/{id})</span>
+</span><span class='line'><span class="nx">tasks</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="nx">title</span> <span class="o">=</span> <span class="s1">&#39;new title&#39;</span>
+</span><span class='line'><span class="nx">tasks</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="nx">save</span><span class="p">()</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// creates a new task and prints out modified date from server</span>
+</span><span class='line'><span class="nx">Task</span><span class="p">.</span><span class="nx">create</span><span class="p">({</span> <span class="nx">id</span><span class="o">:</span> <span class="s1">&#39;guid&#39;</span><span class="p">,</span> <span class="nx">title</span><span class="o">:</span> <span class="s1">&#39;new task&#39;</span> <span class="p">}).</span><span class="nx">then</span><span class="p">(</span><span class="kd">function</span> <span class="p">(</span><span class="nx">task</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">task</span><span class="p">.</span><span class="nx">modified</span><span class="p">)</span>
+</span><span class='line'><span class="p">})</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Organizing business logic</h2>
+
+<p>Before discussing authentication with the API, let me build upon the <code>Task</code> and
+<code>Summary</code> services defined above. Angular is the least prescriptive when it
+comes to modelling and organizing your business (and persistence) logic. Most
+beginner examples implement an application&rsquo;s logic directly within a
+<code>Controller</code> and that may even include <code>$http</code> calls. However, as an
+application grows, a controller&rsquo;s implementation will become unwieldy,
+duplicative, and difficult to test. As such, the better approach is to move the
+application logic into a set of services that your controllers can depend on.
+This yields thin controllers with the single responsibilty of coordinating
+between the view (directives, templates) and model (services).</p>
+
+<p>To implement my business logic, I followed an active record like approach
+defining methods on the <code>Task</code>, <code>Summary</code>, and <code>User</code> prototypes. Here is a
+brief look at how behavior was added to <code>Task</code> for use by one of the
+controllers:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="p">.</span><span class="nx">factory</span><span class="p">(</span><span class="s1">&#39;Task&#39;</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">resource</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">Task</span> <span class="o">=</span> <span class="nx">resource</span> <span class="p">(</span><span class="s1">&#39;/api/tasks{/id}&#39;</span><span class="p">,</span> <span class="p">{</span> <span class="nx">id</span><span class="o">:</span> <span class="s1">&#39;@id&#39;</span> <span class="p">})</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nx">Task</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">applyLabels</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">labels</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="kd">var</span> <span class="nx">self</span> <span class="o">=</span> <span class="k">this</span>
+</span><span class='line'>      <span class="kd">var</span> <span class="nx">added</span> <span class="o">=</span> <span class="kc">false</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="nx">labels</span><span class="p">.</span><span class="nx">forEach</span><span class="p">(</span><span class="kd">function</span> <span class="p">(</span><span class="nx">newLabel</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>          <span class="kd">var</span> <span class="nx">contains</span> <span class="o">=</span> <span class="nx">self</span><span class="p">.</span><span class="nx">labels</span><span class="p">.</span><span class="nx">some</span><span class="p">(</span><span class="kd">function</span> <span class="p">(</span><span class="nx">label</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>              <span class="k">return</span> <span class="nx">label</span> <span class="o">===</span> <span class="nx">newLabel</span>
+</span><span class='line'>          <span class="p">})</span>
+</span><span class='line'>
+</span><span class='line'>          <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">contains</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>              <span class="nx">added</span> <span class="o">=</span> <span class="kc">true</span>
+</span><span class='line'>              <span class="nx">self</span><span class="p">.</span><span class="nx">labels</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">newLabel</span><span class="p">)</span>
+</span><span class='line'>          <span class="p">}</span>
+</span><span class='line'>      <span class="p">})</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="k">return</span> <span class="nx">added</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">return</span> <span class="nx">Task</span>
+</span><span class='line'><span class="p">})</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">.</span><span class="nx">controller</span><span class="p">(</span><span class="s1">&#39;InventoryController&#39;</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">$scope</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">$scope</span><span class="p">.</span><span class="nx">applyLabels</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">labels</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nx">$scope</span><span class="p">.</span><span class="nx">selectedTasks</span><span class="p">.</span><span class="nx">forEach</span><span class="p">(</span><span class="kd">function</span> <span class="p">(</span><span class="nx">task</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>          <span class="k">if</span> <span class="p">(</span><span class="nx">task</span><span class="p">.</span><span class="nx">applyLabels</span><span class="p">(</span><span class="nx">labels</span><span class="p">))</span> <span class="p">{</span>
+</span><span class='line'>              <span class="nx">task</span><span class="p">.</span><span class="nx">save</span><span class="p">()</span>
+</span><span class='line'>          <span class="p">}</span>
+</span><span class='line'>      <span class="p">})</span>
+</span><span class='line'>      <span class="nx">$scope</span><span class="p">.</span><span class="nx">selectedTasks</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">})</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>In addition to implementing methods on the prototype object of the services, I
+used virtual properties to derive values from the primary data within a
+resource&rsquo;s document. This kept the payload as small as possible. To mitigate
+the calculation cost, virtual properties were memozied (cached to return the
+same value on subsequent calls). Here is a brief look at the <code>Summary</code>&rsquo;s
+<code>initialize()</code> method that creates the virtual properties for an instance:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="nx">Summary</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">initialize</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">self</span> <span class="o">=</span> <span class="k">this</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nx">self</span><span class="p">.</span><span class="nx">plannedTasks</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span class='line'>  <span class="nx">self</span><span class="p">.</span><span class="nx">completedTasks</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span class='line'>  <span class="nx">self</span><span class="p">.</span><span class="nx">dashes</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span class='line'>  <span class="nx">self</span><span class="p">.</span><span class="nx">sets</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span class='line'>  <span class="nx">self</span><span class="p">.</span><span class="nx">internalInterruptions</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span class='line'>  <span class="nx">self</span><span class="p">.</span><span class="nx">externalInterruptions</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nb">Object</span><span class="p">.</span><span class="nx">defineProperties</span><span class="p">(</span><span class="nx">self</span><span class="p">,</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nx">plannedDashes</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>          <span class="nx">get</span><span class="o">:</span> <span class="nx">memoize</span><span class="p">(</span><span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>              <span class="k">return</span> <span class="nx">self</span><span class="p">.</span><span class="nx">dashes</span><span class="p">.</span><span class="nx">reduce</span><span class="p">(</span><span class="kd">function</span> <span class="p">(</span><span class="nx">sum</span><span class="p">,</span> <span class="nx">dash</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>                  <span class="k">return</span> <span class="nx">self</span><span class="p">.</span><span class="nx">isPlannedTask</span><span class="p">({</span> <span class="nx">id</span><span class="o">:</span> <span class="nx">dash</span><span class="p">.</span><span class="nx">id</span> <span class="p">})</span> <span class="o">?</span> <span class="o">++</span><span class="nx">sum</span> <span class="o">:</span> <span class="nx">sum</span>
+</span><span class='line'>              <span class="p">},</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>          <span class="p">},</span> <span class="nx">self</span><span class="p">.</span><span class="nx">hashKey</span><span class="p">)</span>
+</span><span class='line'>      <span class="p">},</span>
+</span><span class='line'>      <span class="p">...</span>
+</span><span class='line'>  <span class="p">})</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Handling authentication</h2>
+
+<p>In the previous <a href="http://shawn.dahlen.me/blog/2014/03/17/4dashes-the-api/">post</a>, I discussed the token-based authentication mechanism
+used by the API. To submit a request, a client must supply a valid signed token
+within a HTTP header. A valid token can be retrieved by <code>POST</code>ing a request to
+<code>/api/token</code> with an email address and plaintext password. To support this, I
+implemented a <code>token</code> service responsible for authentication and persistence of
+the token and a an <code>$http</code> <a href="http://docs.angularjs.org/api/ng/service/$http">interceptor</a> to inject the token into API
+requests.</p>
+
+<p>Below is the implementation of the <code>token</code> service. There is a few things to
+note: 1) the service provides a method to <code>authenticate</code> a user&rsquo;s credentials
+used by the login form, 2) the token is set and retrieved via a virtual
+property and persisted to <code>localStorage</code>, and 3) a timeout is scheduled to fire
+two minutes before the token expires and when it does expire &mdash; both
+broadcasting an event for interested listeners.</p>
+
+<figure class='code'><figcaption><span>app/components/api/api.js </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="p">.</span><span class="nx">factory</span><span class="p">(</span><span class="s1">&#39;token&#39;</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">$window</span><span class="p">,</span> <span class="nx">$timeout</span><span class="p">,</span> <span class="nx">$injector</span><span class="p">,</span> <span class="nx">$rootScope</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">token</span> <span class="o">=</span> <span class="nx">$window</span><span class="p">.</span><span class="nx">localStorage</span><span class="p">.</span><span class="nx">getItem</span><span class="p">(</span><span class="s1">&#39;token&#39;</span><span class="p">)</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">expire</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="nx">token</span><span class="p">)</span> <span class="p">{</span> <span class="nx">startTokenTimeout</span><span class="p">()</span> <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">return</span> <span class="nb">Object</span><span class="p">.</span><span class="nx">create</span><span class="p">({</span>
+</span><span class='line'>      <span class="nx">isValid</span><span class="o">:</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>          <span class="k">return</span> <span class="nx">token</span> <span class="o">?</span> <span class="kc">true</span> <span class="o">:</span> <span class="kc">false</span>
+</span><span class='line'>      <span class="p">},</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="nx">authenticate</span><span class="o">:</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">email</span><span class="p">,</span> <span class="nx">password</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>          <span class="k">return</span> <span class="nx">$injector</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;$http&#39;</span><span class="p">).</span><span class="nx">post</span><span class="p">(</span><span class="s1">&#39;/api/token&#39;</span><span class="p">,</span> <span class="p">{</span>
+</span><span class='line'>              <span class="nx">email</span><span class="o">:</span> <span class="nx">email</span><span class="p">,</span>
+</span><span class='line'>              <span class="nx">password</span><span class="o">:</span> <span class="nx">password</span>
+</span><span class='line'>          <span class="p">})</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>  <span class="p">},</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>      <span class="nx">value</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>          <span class="nx">get</span><span class="o">:</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span> <span class="k">return</span> <span class="nx">token</span> <span class="p">},</span>
+</span><span class='line'>          <span class="nx">set</span><span class="o">:</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">newToken</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>              <span class="nx">token</span> <span class="o">=</span> <span class="nx">newToken</span>
+</span><span class='line'>              <span class="k">if</span> <span class="p">(</span><span class="nx">token</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>                  <span class="nx">$window</span><span class="p">.</span><span class="nx">localStorage</span><span class="p">.</span><span class="nx">setItem</span><span class="p">(</span><span class="s1">&#39;token&#39;</span><span class="p">,</span> <span class="nx">token</span><span class="p">)</span>
+</span><span class='line'>                  <span class="nx">startTokenTimeout</span><span class="p">()</span>
+</span><span class='line'>              <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>                  <span class="nx">$window</span><span class="p">.</span><span class="nx">localStorage</span><span class="p">.</span><span class="nx">removeItem</span><span class="p">(</span><span class="s1">&#39;token&#39;</span><span class="p">)</span>
+</span><span class='line'>              <span class="p">}</span>
+</span><span class='line'>          <span class="p">}</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>  <span class="p">})</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="kd">function</span> <span class="nx">startTokenTimeout</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>      <span class="c1">// clear old timeout</span>
+</span><span class='line'>      <span class="k">if</span> <span class="p">(</span><span class="nx">expire</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>          <span class="nx">$timeout</span><span class="p">.</span><span class="nx">cancel</span><span class="p">(</span><span class="nx">expire</span><span class="p">)</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="c1">// parse time remaining minus two minute buffer</span>
+</span><span class='line'>      <span class="kd">var</span> <span class="nx">timeRemaining</span> <span class="o">=</span> <span class="nx">token</span><span class="p">.</span><span class="nx">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="nb">Date</span><span class="p">.</span><span class="nx">now</span><span class="p">()</span> <span class="o">-</span> <span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="mi">60</span><span class="o">*</span><span class="mi">1000</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="k">if</span> <span class="p">(</span><span class="nx">timeRemaining</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>          <span class="nx">token</span> <span class="o">=</span> <span class="kc">null</span>
+</span><span class='line'>          <span class="nx">$rootScope</span><span class="p">.</span><span class="nx">$broadcast</span><span class="p">(</span><span class="s1">&#39;tokenExpired&#39;</span><span class="p">)</span>
+</span><span class='line'>      <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>          <span class="nx">expire</span> <span class="o">=</span> <span class="nx">$timeout</span><span class="p">(</span><span class="kd">function</span> <span class="p">()</span>  <span class="p">{</span>
+</span><span class='line'>              <span class="c1">// alert listeners that token will expire in one minute</span>
+</span><span class='line'>              <span class="nx">$rootScope</span><span class="p">.</span><span class="nx">$broadcast</span><span class="p">(</span><span class="s1">&#39;tokenWillExpire&#39;</span><span class="p">)</span>
+</span><span class='line'>              <span class="nx">expire</span> <span class="o">=</span> <span class="nx">$timeout</span><span class="p">(</span><span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>                  <span class="nx">token</span> <span class="o">=</span> <span class="kc">null</span>
+</span><span class='line'>                  <span class="nx">$rootScope</span><span class="p">.</span><span class="nx">$broadcast</span><span class="p">(</span><span class="s1">&#39;tokenExpired&#39;</span><span class="p">)</span>
+</span><span class='line'>              <span class="p">},</span> <span class="mi">60</span><span class="o">*</span><span class="mi">1000</span><span class="p">)</span>
+</span><span class='line'>          <span class="p">},</span> <span class="nx">timeRemaining</span><span class="p">)</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">})</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The <code>tokenInterceptor</code> service intercepts <code>$http</code> requests and for API calls
+injects a header with a token retrieved from the <code>token</code> service. It also
+intercepts the response to retrieve the new token and persist it with the
+<code>token</code> service for later use. Below is the implementation of the
+<code>tokenInterceptor</code> service and the associated code to configure it:</p>
+
+<figure class='code'><figcaption><span>app/components/api/api.js </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="p">.</span><span class="nx">factory</span><span class="p">(</span><span class="s1">&#39;tokenInterceptor&#39;</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">$q</span><span class="p">,</span> <span class="nx">token</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">TOKEN_HEADER</span> <span class="o">=</span> <span class="s1">&#39;x-access-token&#39;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">return</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nx">request</span><span class="o">:</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">config</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>          <span class="k">if</span> <span class="p">(</span><span class="sr">/api/</span><span class="p">.</span><span class="nx">test</span><span class="p">(</span><span class="nx">config</span><span class="p">.</span><span class="nx">url</span><span class="p">))</span> <span class="p">{</span>
+</span><span class='line'>              <span class="nx">config</span><span class="p">.</span><span class="nx">headers</span><span class="p">[</span><span class="nx">TOKEN_HEADER</span><span class="p">]</span> <span class="o">=</span> <span class="nx">token</span><span class="p">.</span><span class="nx">value</span>
+</span><span class='line'>          <span class="p">}</span>
+</span><span class='line'>          <span class="k">return</span> <span class="nx">config</span>
+</span><span class='line'>      <span class="p">},</span>
+</span><span class='line'>      <span class="nx">response</span><span class="o">:</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">response</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>          <span class="k">if</span> <span class="p">(</span><span class="sr">/api/</span><span class="p">.</span><span class="nx">test</span><span class="p">(</span><span class="nx">response</span><span class="p">.</span><span class="nx">config</span><span class="p">.</span><span class="nx">url</span><span class="p">))</span> <span class="p">{</span>
+</span><span class='line'>              <span class="nx">token</span><span class="p">.</span><span class="nx">value</span> <span class="o">=</span> <span class="nx">response</span><span class="p">.</span><span class="nx">headers</span><span class="p">(</span><span class="nx">TOKEN_HEADER</span><span class="p">)</span>
+</span><span class='line'>          <span class="p">}</span>
+</span><span class='line'>          <span class="k">return</span> <span class="nx">response</span>
+</span><span class='line'>      <span class="p">},</span>
+</span><span class='line'>      <span class="nx">responseError</span><span class="o">:</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">response</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>          <span class="k">if</span> <span class="p">(</span><span class="nx">response</span><span class="p">.</span><span class="nx">status</span> <span class="o">===</span> <span class="mi">401</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>              <span class="nx">token</span><span class="p">.</span><span class="nx">value</span> <span class="o">=</span> <span class="kc">null</span>
+</span><span class='line'>          <span class="p">}</span>
+</span><span class='line'>          <span class="k">return</span> <span class="nx">$q</span><span class="p">.</span><span class="nx">reject</span><span class="p">(</span><span class="nx">response</span><span class="p">)</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">})</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">.</span><span class="nx">config</span><span class="p">(</span><span class="kd">function</span> <span class="p">(</span><span class="nx">$httpProvider</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">$httpProvider</span><span class="p">.</span><span class="nx">interceptors</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="s1">&#39;tokenInterceptor&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="p">})</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>On startup, the application is configured to listen for the <code>$routeChangeStart</code>
+event. When a user navigates to a route for the first time or changes to a new
+one, the application checks if the route is restricted and if the token is
+invalid. If both are true, the user is redirected to the login view. Below is a
+snippet of code highlighting the configuration of a restricted route (note the
+<code>restricted</code> property) and the associated logic for login redirection:</p>
+
+<figure class='code'><figcaption><span>app/app.js </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="c1">// configure app routes</span>
+</span><span class='line'><span class="p">.</span><span class="nx">config</span><span class="p">(</span><span class="kd">function</span> <span class="p">(</span><span class="nx">$routeProvider</span><span class="p">,</span> <span class="nx">$locationProvider</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">$routeProvider</span>
+</span><span class='line'>  <span class="p">.</span><span class="nx">when</span><span class="p">(</span><span class="s1">&#39;/today&#39;</span><span class="p">,</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nx">templateUrl</span><span class="o">:</span> <span class="s1">&#39;template/today/today.html&#39;</span><span class="p">,</span>
+</span><span class='line'>      <span class="nx">controller</span><span class="o">:</span> <span class="s1">&#39;TodayController&#39;</span><span class="p">,</span>
+</span><span class='line'>      <span class="nx">restricted</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+</span><span class='line'>      <span class="nx">resolve</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>          <span class="nx">user</span><span class="o">:</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">User</span><span class="p">)</span> <span class="p">{</span> <span class="k">return</span> <span class="nx">User</span><span class="p">.</span><span class="nx">fetch</span><span class="p">()</span> <span class="p">},</span>
+</span><span class='line'>          <span class="nx">tasks</span><span class="o">:</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">Task</span><span class="p">)</span> <span class="p">{</span> <span class="k">return</span> <span class="nx">Task</span><span class="p">.</span><span class="nx">fetch</span><span class="p">()</span> <span class="p">},</span>
+</span><span class='line'>          <span class="nx">summaries</span><span class="o">:</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">Summary</span><span class="p">)</span> <span class="p">{</span> <span class="k">return</span> <span class="nx">Summary</span><span class="p">.</span><span class="nx">fetch</span><span class="p">()</span> <span class="p">}</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>  <span class="p">})</span>
+</span><span class='line'>  <span class="p">.</span><span class="nx">when</span><span class="p">(</span><span class="s1">&#39;/login&#39;</span><span class="p">,</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nx">templateUrl</span><span class="o">:</span> <span class="s1">&#39;template/login/login.html&#39;</span><span class="p">,</span>
+</span><span class='line'>      <span class="nx">controller</span><span class="o">:</span> <span class="s1">&#39;LoginController&#39;</span><span class="p">,</span>
+</span><span class='line'>      <span class="nx">restricted</span><span class="o">:</span> <span class="kc">false</span>
+</span><span class='line'>  <span class="p">})</span>
+</span><span class='line'>  <span class="p">...</span>
+</span><span class='line'><span class="p">})</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// initialize the app on startup</span>
+</span><span class='line'><span class="p">.</span><span class="nx">run</span><span class="p">(</span><span class="kd">function</span> <span class="p">(</span><span class="nx">$rootScope</span><span class="p">,</span> <span class="nx">$location</span><span class="p">,</span> <span class="nx">token</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="c1">// listen for a route change and redirect to /login if a valid token</span>
+</span><span class='line'>  <span class="c1">// is not present</span>
+</span><span class='line'>  <span class="nx">$rootScope</span><span class="p">.</span><span class="nx">$on</span><span class="p">(</span><span class="s1">&#39;$routeChangeStart&#39;</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">event</span><span class="p">,</span> <span class="nx">next</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="k">if</span> <span class="p">(</span><span class="nx">next</span><span class="p">.</span><span class="nx">restricted</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="nx">token</span><span class="p">.</span><span class="nx">isValid</span><span class="p">())</span> <span class="p">{</span>
+</span><span class='line'>          <span class="nx">$location</span><span class="p">.</span><span class="nx">path</span><span class="p">(</span><span class="s1">&#39;/login&#39;</span><span class="p">)</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>  <span class="p">})</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// listen for token expiration and redirect to /login</span>
+</span><span class='line'>  <span class="nx">$rootScope</span><span class="p">.</span><span class="nx">$on</span><span class="p">(</span><span class="s1">&#39;tokenExpired&#39;</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">event</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nx">$location</span><span class="p">.</span><span class="nx">path</span><span class="p">(</span><span class="s1">&#39;/login&#39;</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">})</span>
+</span><span class='line'><span class="p">})</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>With the discussion regarding API communication and business logic complete,
+the next post will cover the user interface implmentation.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[4dashes - the API]]></title>
