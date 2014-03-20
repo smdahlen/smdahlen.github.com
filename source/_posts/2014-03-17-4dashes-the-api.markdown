@@ -3,7 +3,8 @@ layout: post
 title: "4dashes - the API"
 date: 2014-03-17 12:02:55 -0400
 comments: true
-categories: 
+keywords: 4dashes,node.js,express,api,authentication
+description: A post covering the server-side API implementation of 4dashes using Node.js and Express.
 ---
 
 This is the second in a series of posts discussing the implementation of the

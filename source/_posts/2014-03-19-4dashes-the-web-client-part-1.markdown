@@ -3,10 +3,14 @@ layout: post
 title: "4dashes - the web client, part 1"
 date: 2014-03-19 14:28:37 -0400
 comments: true
-categories: 
+keywords: 4dashes,angular,api,authentication,web
+description: A post covering the web services communication and implementation of business logic for 4dashes using Angular.js.
 ---
 
-This is the third in a series of posts discussing the implementation of the [4dashes][1] productivity tool. It covers the web services communication and implementation of business logic within the [Angular-based][2] web application. The post assumes the reader has a basic understanding of the Angular framework.
+This is the third in a series of posts discussing the implementation of the
+[4dashes][1] productivity tool. It covers the web services communication and
+implementation of business logic within the [Angular-based][2] web application.
+The post assumes the reader has a basic understanding of the Angular framework.
 
 <!-- more -->
 
@@ -35,11 +39,24 @@ concepts and provided by the library.
 
 ## Communicating with the API
 
-Lets begin with the implementation responsible for communicating with the server-side API discussed in the [previous post][3]. To keep it simple, I started with Angular's `$http` service. This quickly grew into a custom `resource` service resembling the optional `$resource` service provided by the Angular team. I treaded down this path for two reasons: 1) support for PATCH requests with automatic change tracking (similar to [Backbone][4]), and 2) support for offline use with data synchronization.
+Lets begin with the implementation responsible for communicating with the
+server-side API discussed in the [previous post][3]. To keep it simple, I
+started with Angular's `$http` service. This quickly grew into a custom
+`resource` service resembling the optional `$resource` service provided by the
+Angular team. I treaded down this path for two reasons: 1) support for PATCH
+requests with automatic change tracking (similar to [Backbone][4]), and 2)
+support for offline use with data synchronization.
 
-Unfortunately, time did not permit a clean implementation of either requirement but I proceeded with my custom service anyway (if there is interest, I can expand on the issues I ran into). As you will see below, the implementation was small and straightforward while providing me a great understanding of Angular's `$http` service and *promises* implementation.
+Unfortunately, time did not permit a clean implementation of either requirement
+but I proceeded with my custom service anyway (if there is interest, I can
+expand on the issues I ran into). As you will see below, the implementation was
+small and straightforward while providing me a great understanding of Angular's
+`$http` service and *promises* implementation.
 
-The implementation aligned with my creation and update semantics (e.g. conditional updates, creation with `PUT`), cached results for subsequent fetches, transformed RFC8601 strings into dates, and provided an initialization hook to modify the resource instance on creation.
+The implementation aligned with my creation and update semantics (e.g.
+conditional updates, creation with `PUT`), cached results for subsequent
+fetches, transformed RFC8601 strings into dates, and provided an initialization
+hook to modify the resource instance on creation.
 
 {% codeblock lang:javascript app/components/api/api.js %}
 
@@ -152,7 +169,10 @@ angular.module('api', [])
 
 {% endcodeblock %}
 
-Similar to `$resource`, a concrete resource is defined by supplying a base URI and template parameters (see [RFC 6570: URI Templates][5]). Here is how I defined the concrete `Task` and `Summary` resources that communicates with endpoints defined in the previous post:
+Similar to `$resource`, a concrete resource is defined by supplying a base URI
+and template parameters (see [RFC 6570: URI Templates][5]). Here is how I
+defined the concrete `Task` and `Summary` resources that communicates with
+endpoints defined in the previous post:
 
 {% codeblock lang:javascript app/components/api/api.js %}
 
@@ -202,9 +222,21 @@ Task.create({ id: 'guid', title: 'new task' }).then(function (task) {
 
 ## Organizing business logic
 
-Before discussing authentication with the API, let me build upon the `Task` and `Summary` services defined above. Angular is the least prescriptive when it comes to modelling and organizing your business (and persistence) logic. Most beginner examples implement an application's logic directly within a `Controller` and that may even include `$http` calls. However, as an application grows, a controller's implementation will become unwieldy, duplicative, and difficult to test. As such, the better approach is to move the application logic into a set of services that your controllers can depend on. This yields thin controllers with the single responsibilty of coordinating between the view (directives, templates) and model (services).
+Before discussing authentication with the API, let me build upon the `Task` and
+`Summary` services defined above. Angular is the least prescriptive when it
+comes to modelling and organizing your business (and persistence) logic. Most
+beginner examples implement an application's logic directly within a
+`Controller` and that may even include `$http` calls. However, as an
+application grows, a controller's implementation will become unwieldy,
+duplicative, and difficult to test. As such, the better approach is to move the
+application logic into a set of services that your controllers can depend on.
+This yields thin controllers with the single responsibilty of coordinating
+between the view (directives, templates) and model (services).
 
-To implement my business logic, I followed an active record like approach defining methods on the `Task`, `Summary`, and `User` prototypes. Here is a brief look at how behavior was added to `Task` for use by one of the controllers:
+To implement my business logic, I followed an active record like approach
+defining methods on the `Task`, `Summary`, and `User` prototypes. Here is a
+brief look at how behavior was added to `Task` for use by one of the
+controllers:
 
 {% codeblock lang:javascript %}
 
@@ -245,7 +277,12 @@ To implement my business logic, I followed an active record like approach defini
 
 {% endcodeblock %}
 
-In addition to implementing methods on the prototype object of the services, I used virtual properties to derive values from the primary data within a resource's document. This kept the payload as small as possible. To mitigate the calculation cost, virtual properties were memozied (cached to return the same value on subsequent calls). Here is a brief look at the `Summary`'s `initialize()` method that creates the virtual properties for an instance:
+In addition to implementing methods on the prototype object of the services, I
+used virtual properties to derive values from the primary data within a
+resource's document. This kept the payload as small as possible. To mitigate
+the calculation cost, virtual properties were memozied (cached to return the
+same value on subsequent calls). Here is a brief look at the `Summary`'s
+`initialize()` method that creates the virtual properties for an instance:
 
 {% codeblock lang:javascript %}
 
@@ -275,10 +312,176 @@ Summary.prototype.initialize = function () {
 
 ## Handling authentication
 
-In the previous [post][3], I discussed the token-based authentication mechanism used by the API. To submit a request, a client must supply a valid signed token within a HTTP header. A valid token can be retrieved by `POST`ing a request to `/api/token` with an email address and plaintext password.
+In the previous [post][3], I discussed the token-based authentication mechanism
+used by the API. To submit a request, a client must supply a valid signed token
+within a HTTP header. A valid token can be retrieved by `POST`ing a request to
+`/api/token` with an email address and plaintext password. To support this, I
+implemented a `token` service responsible for authentication and persistence of
+the token and a an `$http` [interceptor][6] to inject the token into API
+requests.
+
+Below is the implementation of the `token` service. There is a few things to
+note: 1) the service provides a method to `authenticate` a user's credentials
+used by the login form, 2) the token is set and retrieved via a virtual
+property and persisted to `localStorage`, and 3) a timeout is scheduled to fire
+two minutes before the token expires and when it does expire &mdash; both
+broadcasting an event for interested listeners. 
+
+{% codeblock lang:javascript app/components/api/api.js %}
+
+.factory('token', function ($window, $timeout, $injector, $rootScope) {
+	var token = $window.localStorage.getItem('token')
+	var expire
+
+	if (token) { startTokenTimeout() }
+
+	return Object.create({
+		isValid: function () {
+			return token ? true : false
+		},
+
+		authenticate: function (email, password) {
+			return $injector.get('$http').post('/api/token', {
+				email: email,
+				password: password
+			})
+		}
+	},
+	{
+		value: {
+			get: function () { return token },
+			set: function (newToken) {
+				token = newToken
+				if (token) {
+					$window.localStorage.setItem('token', token)
+					startTokenTimeout()
+				} else {
+					$window.localStorage.removeItem('token')
+				}
+			}
+		}
+	})
+
+	function startTokenTimeout() {
+		// clear old timeout
+		if (expire) {
+			$timeout.cancel(expire)
+		}
+
+		// parse time remaining minus two minute buffer
+		var timeRemaining = token.split(':')[1] - Date.now() - (2*60*1000)
+
+		if (timeRemaining <= 0) {
+			token = null
+			$rootScope.$broadcast('tokenExpired')
+		} else {
+			expire = $timeout(function ()	{
+				// alert listeners that token will expire in one minute
+				$rootScope.$broadcast('tokenWillExpire')
+				expire = $timeout(function () {
+					token = null
+					$rootScope.$broadcast('tokenExpired')
+				}, 60*1000)
+			}, timeRemaining)
+		}
+	}
+})
+
+{% endcodeblock %}
+
+The `tokenInterceptor` service intercepts `$http` requests and for API calls
+injects a header with a token retrieved from the `token` service. It also
+intercepts the response to retrieve the new token and persist it with the
+`token` service for later use. Below is the implementation of the
+`tokenInterceptor` service and the associated code to configure it:
+
+{% codeblock lang:javascript app/components/api/api.js %}
+
+.factory('tokenInterceptor', function ($q, token) {
+	var TOKEN_HEADER = 'x-access-token'
+
+	return {
+		request: function (config) {
+			if (/api/.test(config.url)) {
+				config.headers[TOKEN_HEADER] = token.value
+			}
+			return config
+		},
+		response: function (response) {
+			if (/api/.test(response.config.url)) {
+				token.value = response.headers(TOKEN_HEADER)
+			}
+			return response
+		},
+		responseError: function (response) {
+			if (response.status === 401) {
+				token.value = null
+			}
+			return $q.reject(response)
+		}
+	}
+})
+
+.config(function ($httpProvider) {
+	$httpProvider.interceptors.push('tokenInterceptor')
+})
+
+{% endcodeblock %}
+
+On startup, the application is configured to listen for the `$routeChangeStart`
+event. When a user navigates to a route for the first time or changes to a new
+one, the application checks if the route is restricted and if the token is
+invalid. If both are true, the user is redirected to the login view. Below is a 
+snippet of code highlighting the configuration of a restricted route (note the
+`restricted` property) and the associated logic for login redirection:
+
+{% codeblock lang:javascript app/app.js %}
+
+// configure app routes
+.config(function ($routeProvider, $locationProvider) {
+	$routeProvider
+	.when('/today', {
+		templateUrl: 'template/today/today.html',
+		controller: 'TodayController',
+		restricted: true,
+		resolve: {
+			user: function (User) { return User.fetch() },
+			tasks: function (Task) { return Task.fetch() },
+			summaries: function (Summary) { return Summary.fetch() }
+		}
+	})
+	.when('/login', {
+		templateUrl: 'template/login/login.html',
+		controller: 'LoginController',
+		restricted: false
+	})
+	...
+})
+
+// initialize the app on startup
+.run(function ($rootScope, $location, token) {
+	// listen for a route change and redirect to /login if a valid token
+	// is not present
+	$rootScope.$on('$routeChangeStart', function (event, next) {
+		if (next.restricted && !token.isValid()) {
+			$location.path('/login')
+		}
+	})
+
+	// listen for token expiration and redirect to /login
+	$rootScope.$on('tokenExpired', function (event) {
+		$location.path('/login')
+	})
+})
+
+{% endcodeblock %}
+
+With the discussion regarding API communication and business logic complete,
+the next post will cover the user interface implmentation.
 
 [1]: https://4dashes.com
 [2]: http://angularjs.org
 [3]: http://shawn.dahlen.me/blog/2014/03/17/4dashes-the-api/
 [4]: http://backbonejs.org/#Model-save
 [5]: http://tools.ietf.org/html/rfc6570
+[6]: http://docs.angularjs.org/api/ng/service/$http
