@@ -1,0 +1,562 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>4dashes - the Web Client, Part 2 - Shawn Dahlen</title>
+  <meta name="author" content="Shawn Dahlen">
+
+  
+  <meta name="description" content="A post covering the user interface implmentation for 4dashes using Angular.js.">
+  <meta name="keywords" content="4dashes,angular,directive,ui,web components">
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://smdahlen.github.com/blog/2014/03/21/4dashes-the-web-client-part-2">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Shawn Dahlen" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-1951656-2']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Shawn Dahlen</a></h1>
+  
+    <h2>Periodic updates on my software startup endeavor</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:smdahlen.github.com" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">4dashes - the Web Client, Part 2</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-03-21T10:18:34-04:00" pubdate data-updated="true">Mar 21<span>st</span>, 2014</time>
+        
+           | <a href="#disqus_thread"
+             data-disqus-identifier="http://smdahlen.github.com">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>This is the fourth in a series of posts discussing the implementation of the
+<a href="https://4dashes.com">4dashes</a> productivity tool. Continuing from the last <a href="http://shawn.dahlen.me/blog/2014/03/19/4dashes-the-web-client-part-1/">post</a>, it covers
+the user interface implementation using <a href="http://angularjs.org">Angular.js</a>. The post assumes the
+reader has a basic understanding of the Angular framework.</p>
+
+<!-- more -->
+
+
+<h2>Organizing a basic interface</h2>
+
+<p>With a <a href="http://shawn.dahlen.me/blog/2014/03/19/4dashes-the-web-client-part-1/">well-organized model</a> in place, let&rsquo;s shift our attention towards
+the user interface implementation that interacts with it. As I previously
+mentioned, Angular is a DOM compiler. An interface is contructed with standard
+HTML markup coupled with additional elements and attributes to extend behavior
+relevant to web applications. On startup, Angular <em>compiles</em> this markup, or
+template, to construct an object model the browser can render.</p>
+
+<p>For the most basic applications, an interface can be declared wholly within a
+single template using primitives provided by Angular. Additional routes or
+views can be easily added with the <code>$route</code> service with each route mapping to
+a single template (the declarative interface) and an associated controller (the
+logic handling user interaction). As I discussed in my <a href="http://shawn.dahlen.me/blog/2014/03/13/4dashes-the-build-system/">build system post</a>,
+I organized around functional components so for each route, I had a
+corresponding component. Each component has an <em>html</em> file representing the
+template, a <em>less</em> file representing the style, and a <em>javascript</em> file
+containing the controller.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>4dashes/
+</span><span class='line'>  app/
+</span><span class='line'>      components/
+</span><span class='line'>          today/
+</span><span class='line'>              today.js
+</span><span class='line'>              today.html
+</span><span class='line'>              today.less
+</span><span class='line'>          inventory/
+</span><span class='line'>          statistics/
+</span><span class='line'>          login/
+</span><span class='line'>          signup/</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Decomposing complex interfaces</h2>
+
+<p>As an interface grows more complex, you are forced to consider decomposition of
+a view&rsquo;s template. With Angular, two basic approaches exist. The first approach
+is typical of most web frameworks &mdash; logical segments of a template are broken
+out into <em>partial</em> templates and included into the main one using <code>ng-include</code>.
+It follows that user interaction logic related to that partial template would
+be refactored into its own sub-controller. While this appproach handles the
+growing complexity of an interface, there are downsides. Partial templates
+establish an <strong>implicit</strong> fragile interface with the main template.
+Specifically, the partial will likely depend upon scope defined within it&rsquo;s
+parent making it difficult to test in isolation and increasing the liklihood
+for regression. The second approach resolves this.</p>
+
+<p>As I have continued to point out, Angular is a DOM compiler providing you with
+the mechanism to extend the HTML language with our own domain-specific elements
+and attributes. The second approach takes advantage of this by composing a
+complex template with custom elements encapsulating markup and presentation
+logic. The custom element and its attributes provide an <strong>explicit</strong> interface
+to the template and therefore supports testing in isolation and forms the basis
+for reusability. As a bonus, it aligns well with future standards regarding
+<a href="https://developers.google.com/events/io/sessions/318907648">web components</a>.</p>
+
+<p>Many choose the former approach due to its familiarity and simplicity and only
+consider custom elements when reusability is required. However, once you fully
+understand the concept of a <a href="http://docs.angularjs.org/guide/directive">directive</a>, the mechanism to create custom
+elements, it becomes clear that the marginal cost is extremely small. It should
+be adopted as the preferred approach for its testability and readibility. Below
+is a code snippet for creating the most basic custom element that encapsulates
+its own template:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="p">.</span><span class="nx">directive</span><span class="p">(</span><span class="s1">&#39;avatar&#39;</span><span class="p">,</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>  <span class="k">return</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nx">replace</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+</span><span class='line'>      <span class="nx">templateUrl</span><span class="o">:</span> <span class="s1">&#39;template/components/avatar/avatar.html&#39;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">})</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Handling user interaction</h2>
+
+<p>Once you start following the guideline articulated above, a question regarding
+the handling of user interaction arises. Should your directive communicate
+directly with your services (domain model)? Its certainly easy to do so. A
+service is injected into a directive and when a DOM event is triggered by user
+action, the directive responds by delegating directly to a service method. But
+what if other parts (components) of the interface are also interested in the
+event? You could broadcast it on an event bus (<code>$rootScope</code>) but that has the
+disadvantage of spreading out user interaction logic across the application.</p>
+
+<p>Instead, we can follow the approach of primitive HTML elements &mdash; provide
+an attribute whose value is a delegate function that is called when a user
+action occurs. This establishes an explicit interface while ensuring that the
+handling of presentation logic is the <em>single reponsiblity</em> of a directive.
+Below is a snippet from the inventory view&rsquo;s template (the sidebar)
+highlighting delegate functions for custom elements:</p>
+
+<figure class='code'><figcaption><span>app/components/inventory/inventory.html </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='html'><span class='line'><span class="nt">&lt;div</span> <span class="na">id=</span><span class="s">&quot;inventory&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>  ...
+</span><span class='line'>  <span class="nt">&lt;div&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;statistic</span>
+</span><span class='line'>          <span class="na">title=</span><span class="s">&quot;working days&quot;</span>
+</span><span class='line'>          <span class="na">value=</span><span class="s">&quot;etc()&quot;</span>
+</span><span class='line'>          <span class="na">enabled=</span><span class="s">&quot;&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>          estimate to complete flagged tasks
+</span><span class='line'>      <span class="nt">&lt;/statistic&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;label</span><span class="na">-list</span> <span class="na">selected=</span><span class="s">&quot;selectedLabels&quot;</span> <span class="na">oncreate=</span><span class="s">&quot;addLabel(label)&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>          <span class="nt">&lt;label</span><span class="na">-list-item</span>
+</span><span class='line'>              <span class="na">ng-repeat=</span><span class="s">&quot;label in user.labels | orderBy:&#39;name&#39;&quot;</span>
+</span><span class='line'>              <span class="na">onchange=</span><span class="s">&quot;renameLabel(label, value)&quot;</span>
+</span><span class='line'>              <span class="na">onremove=</span><span class="s">&quot;removeLabel(label)&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>          <span class="err">&lt;</span>/label-list-item&gt;
+</span><span class='line'>      <span class="err">&lt;</span>/label-list&gt;
+</span><span class='line'>  <span class="nt">&lt;/div&gt;</span>
+</span><span class='line'><span class="nt">&lt;/div&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>As you can see from this example, the inventory&rsquo;s sidebar is declared at a
+higher level of abstraction than primitive HTML elements. The <code>&lt;label-list&gt;</code>
+element exposes an interface allowing the <code>InventoryController</code> to handle its
+single responsibility of coordinating user actions with application services
+(domain model) and other directives (components).</p>
+
+<p>As a consequence of following the guidelines above, we are left with a single
+template per view and a controller paired with it to handle user interaction.
+For duplicative controller logic across views, I preferred a
+<a href="http://digital-drive.com/?p=188">mixin strategy</a> wherein common behavior was added using <code>angular.extend</code>.</p>
+
+<h2>Handling complex presentation logic</h2>
+
+<p>At this point you may be wondering how to handle complex presentation logic. Is
+it enough to simply implement private functions for use within your directive&rsquo;s
+<code>link</code> function? For simple cases, yes, but as the logic becomes more complex
+so does unit testing the directive itself. When the situation arose, I
+refactored the complex presentation logic into one or more services &lsquo;private&rsquo;
+to the directive. Think of them as support functions that can be tested in
+isolation.</p>
+
+<p>Below is a snippet of my <code>chart</code> directive responsible for rendering a stacked
+bar chart with a trend line. The implementation responsible for drawing on the
+canvas is delegated to a service within the component&rsquo;s module.</p>
+
+<figure class='code'><figcaption><span>app/components/chart/chart.js </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="nx">angular</span><span class="p">.</span><span class="nx">module</span><span class="p">(</span><span class="s1">&#39;chart&#39;</span><span class="p">,</span> <span class="p">[])</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">.</span><span class="nx">directive</span><span class="p">(</span><span class="s1">&#39;chart&#39;</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">chart</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="k">return</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nx">restrict</span><span class="o">:</span> <span class="s1">&#39;E&#39;</span><span class="p">,</span>
+</span><span class='line'>      <span class="nx">replace</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+</span><span class='line'>      <span class="nx">templateUrl</span><span class="o">:</span> <span class="s1">&#39;template/chart/chart.html&#39;</span><span class="p">,</span>
+</span><span class='line'>      <span class="nx">scope</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>          <span class="nx">data</span><span class="o">:</span> <span class="s1">&#39;=&#39;</span><span class="p">,</span>
+</span><span class='line'>          <span class="nx">options</span><span class="o">:</span> <span class="s1">&#39;=&#39;</span>
+</span><span class='line'>      <span class="p">},</span>
+</span><span class='line'>      <span class="nx">link</span><span class="o">:</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">scope</span><span class="p">,</span> <span class="nx">element</span><span class="p">,</span> <span class="nx">attrs</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>          <span class="kd">var</span> <span class="nx">percent</span> <span class="o">=</span> <span class="nx">scope</span><span class="p">.</span><span class="nx">options</span> <span class="o">&amp;&amp;</span> <span class="nx">scope</span><span class="p">.</span><span class="nx">options</span><span class="p">.</span><span class="nx">percentageValue</span> <span class="o">?</span> <span class="s1">&#39;%&#39;</span> <span class="o">:</span> <span class="s1">&#39;&#39;</span>
+</span><span class='line'>          <span class="kd">var</span> <span class="nx">canvas</span>
+</span><span class='line'>          <span class="kd">var</span> <span class="nx">cb</span>
+</span><span class='line'>
+</span><span class='line'>          <span class="c1">// setup legends</span>
+</span><span class='line'>          <span class="nx">scope</span><span class="p">.</span><span class="nx">legends</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span class='line'>          <span class="nx">scope</span><span class="p">.</span><span class="nx">data</span><span class="p">.</span><span class="nx">forEach</span><span class="p">(</span><span class="kd">function</span> <span class="p">(</span><span class="nx">dataset</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>              <span class="nx">scope</span><span class="p">.</span><span class="nx">legends</span><span class="p">.</span><span class="nx">push</span><span class="p">({</span>
+</span><span class='line'>                  <span class="nx">title</span><span class="o">:</span> <span class="nx">dataset</span><span class="p">.</span><span class="nx">legend</span><span class="p">,</span>
+</span><span class='line'>                  <span class="nx">color</span><span class="o">:</span> <span class="nx">dataset</span><span class="p">.</span><span class="nx">color</span>
+</span><span class='line'>              <span class="p">})</span>
+</span><span class='line'>          <span class="p">})</span>
+</span><span class='line'>
+</span><span class='line'>          <span class="c1">// render chart on canvas element</span>
+</span><span class='line'>          <span class="nx">canvas</span> <span class="o">=</span> <span class="nx">element</span><span class="p">.</span><span class="nx">find</span><span class="p">(</span><span class="s1">&#39;canvas&#39;</span><span class="p">)</span>
+</span><span class='line'>          <span class="nx">cb</span> <span class="o">=</span> <span class="nx">chart</span><span class="p">(</span><span class="nx">canvas</span><span class="p">,</span> <span class="nx">scope</span><span class="p">.</span><span class="nx">data</span><span class="p">,</span> <span class="nx">scope</span><span class="p">.</span><span class="nx">options</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>          <span class="c1">// setup mousemove callback to display data points</span>
+</span><span class='line'>          <span class="nx">canvas</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;mousemove&#39;</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">event</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>              <span class="nx">result</span> <span class="o">=</span> <span class="nx">cb</span><span class="p">(</span><span class="nx">event</span><span class="p">)</span>
+</span><span class='line'>              <span class="p">...</span>
+</span><span class='line'>          <span class="p">})</span>
+</span><span class='line'>
+</span><span class='line'>          <span class="c1">// clean up event handlers on destroy</span>
+</span><span class='line'>          <span class="nx">scope</span><span class="p">.</span><span class="nx">$on</span><span class="p">(</span><span class="s1">&#39;$destroy&#39;</span><span class="p">,</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>              <span class="nx">canvas</span><span class="p">.</span><span class="nx">off</span><span class="p">()</span>
+</span><span class='line'>          <span class="p">})</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">})</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">.</span><span class="nx">factory</span><span class="p">(</span><span class="s1">&#39;chart&#39;</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">$window</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="k">return</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">element</span><span class="p">,</span> <span class="nx">datasets</span><span class="p">,</span> <span class="nx">options</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="kd">var</span> <span class="nx">ctx</span> <span class="o">=</span> <span class="nx">element</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="nx">getContext</span><span class="p">(</span><span class="s1">&#39;2d&#39;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="c1">// complex canvas rendering here</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="c1">// return function to convert mousemove event into data points</span>
+</span><span class='line'>      <span class="k">return</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">event</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">})</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>I hope you have found this two-part series on Angular.js helpful in
+constructing larger web applications. If there is interest and time permits, I
+may write an article discussing my unit test strategy. In either case, it
+should be reasonably clear that following the guidelines I discussed will yield
+an application comprised of testable web components. Ultimately, that is what
+makes Angular.js special and a great candidate for tackling client-side
+applications.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Shawn Dahlen</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-03-21T10:18:34-04:00" pubdate data-updated="true">Mar 21<span>st</span>, 2014</time>
+      
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://smdahlen.github.com/blog/2014/03/21/4dashes-the-web-client-part-2/" data-via="smdahlen" data-counturl="http://smdahlen.github.com/blog/2014/03/21/4dashes-the-web-client-part-2/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/03/19/4dashes-the-web-client-part-1/" title="Previous Post: 4dashes - the web client, part 1">&laquo; 4dashes - the web client, part 1</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section id="product">
+	<a href="https://4dashes.com" target="_blank">
+		<img src="/images/4dashes.png" alt="4dashes">
+	</a>
+	<p>
+		Check out the results of my startup &mdash; a productivity tool
+		that transforms your todo list into a game.
+	</p>
+</section>
+<section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/03/21/4dashes-the-web-client-part-2/">4dashes - the Web Client, Part 2</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/03/19/4dashes-the-web-client-part-1/">4dashes - the Web Client, Part 1</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/03/17/4dashes-the-api/">4dashes - the API</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/03/13/4dashes-the-build-system/">4dashes - the Build System</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/03/12/working-smarter-not-longer/">Working Smarter, Not Longer</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+<section>
+	<h1 style="margin-bottom:10px">Latest Tweets</h1>
+	<a class="twitter-timeline" href="https://twitter.com/smdahlen" data-widget-id="443486127396114432">Tweets by @smdahlen</a>
+	<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+"://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2014 - Shawn Dahlen -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'shawndahlen';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://smdahlen.github.com/blog/2014/03/21/4dashes-the-web-client-part-2/';
+        var disqus_url = 'http://smdahlen.github.com/blog/2014/03/21/4dashes-the-web-client-part-2/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
